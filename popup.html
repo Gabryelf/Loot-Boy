@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        
+        <div class="top-bar">
+            <button id="inventoryBtn" class="icon-btn" title="Инвентарь">
+                <canvas class="icon-canvas" data-icon="inventory" width="32" height="32"></canvas>
+            </button>
+            <button id="craftBtn" class="icon-btn" title="Крафт">
+                <canvas class="icon-canvas" data-icon="craft" width="32" height="32"></canvas>
+            </button>
+            <button id="restBtn" class="icon-btn" title="Отдых">
+                <canvas class="icon-canvas" data-icon="rest" width="32" height="32"></canvas>
+            </button>
+            <button id="perksBtn" class="icon-btn" title="Перки">
+                <canvas class="icon-canvas" data-icon="perks" width="32" height="32"></canvas>
+            </button>
+            <button id="chatToggleBtn" class="icon-btn" title="Чат">
+                <canvas class="icon-canvas" data-icon="chat-open" width="32" height="32"></canvas>
+            </button>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <canvas class="status-icon" data-icon="health" width="16" height="16"></canvas>
+                <span id="hpValue">100</span>
+            </div>
+            <div class="status-item">
+                <canvas class="status-icon" data-icon="food" width="16" height="16"></canvas>
+                <span id="foodValue">100</span>
+            </div>
+            <div class="status-item">
+                <canvas class="status-icon" data-icon="water" width="16" height="16"></canvas>
+                <span id="waterValue">100</span>
+            </div>
+            <div class="status-item">
+                <canvas class="status-icon" data-icon="exp" width="16" height="16"></canvas>
+                <span id="expValue">0</span>
+            </div>
+            <div class="status-item">
+                <canvas class="status-icon" data-icon="distance" width="16" height="16"></canvas>
+                <span id="distanceValue">0</span>
+            </div>
+            <div class="status-item">
+                🎯 <span id="levelValue">1</span>
+            </div>
+        </div>
+        
+        <div id="chatPanel" class="chat-panel">
+            <div class="chat-messages" id="chatMessages"></div>
+        </div>
+        
+        <div id="choiceModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>Событие</h3>
+                <p id="modalText"></p>
+                <div id="modalOptions"></div>
+            </div>
+        </div>
+        
+        <div id="inventoryModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>📦 ИНВЕНТАРЬ</h3>
+                <div id="inventoryList" class="inventory-grid"></div>
+                <button class="modal-close" onclick="window.game.closeInventory()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script src="texts.js"></script>
+    <script src="perks.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
