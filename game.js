@@ -5,6 +5,9 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // Загрузка сохранения
+        this.loadGame();
+        
         // Состояние игрока
         this.player = {
             hp: CONFIG.PLAYER.START_HP,
@@ -14,22 +17,26 @@ class Game {
             water: CONFIG.PLAYER.START_WATER,
             level: CONFIG.PLAYER.START_LEVEL,
             exp: CONFIG.PLAYER.START_EXP,
-            distance: 0,
+            distance: CONFIG.PLAYER.START_DISTANCE,
             inventory: [],
             currentWeapon: CONFIG.PLAYER.START_WEAPON,
-            weapons: { ...CONFIG.PLAYER.WEAPONS },
+            weapons: JSON.parse(JSON.stringify(CONFIG.PLAYER.WEAPONS)),
             armor: CONFIG.PLAYER.START_ARMOR,
             perkPoints: 0,
             
-            // Бонусы от перков
             meleeDamageBonus: 1,
             rangedDamageBonus: 1,
             lootChanceBonus: 1,
             resourceDrainBonus: 1,
             lowHpBonus: 1,
             ammoDropBonus: 1,
-            healBonus: 1
+            healBonus: 1,
+            attackSpeedBonus: 1
         };
+        
+        // Время игры
+        this.gameTime = 0;
+        this.lastDistanceReport = 0;
         
         // Боевые переменные
         this.inCombat = false;
@@ -45,9 +52,11 @@ class Game {
         this.walkingCycle = 0;
         this.gameLoop = null;
         this.eventTimer = null;
+        this.distanceReportTimer = null;
         this.isChatCollapsed = false;
         this.shootAnimation = false;
         this.meleeAnimation = false;
+        this.lastSecond = 0;
         
         // Спрайты
         this.sprites = {};
@@ -60,11 +69,11 @@ class Game {
         this.updateUI();
         this.startGameLoop();
         this.startEventTimer();
+        this.startDistanceReporter();
         this.addEventListeners();
         this.setupIcons();
         this.addLog(TEXTS.CHAT.WELCOME, 'system');
         this.addLog(TEXTS.CHAT.WELCOME_DESC, 'system');
-        this.loadGame();
     }
     
     async loadAllSprites() {
@@ -134,21 +143,36 @@ class Game {
         }, CONFIG.GAME.EVENT_INTERVAL);
     }
     
+    startDistanceReporter() {
+        this.distanceReportTimer = setInterval(() => {
+            if (!this.inCombat) {
+                this.reportDistance();
+            }
+        }, CONFIG.GAME.DISTANCE_REPORT_INTERVAL);
+    }
+    
+    reportDistance() {
+        const distanceMeters = Math.floor(this.player.distance);
+        this.addLog(`${TEXTS.CHAT.TIME_PREFIX} ${distanceMeters} ${TEXTS.CHAT.DISTANCE_REPORT}`, 'time');
+    }
+    
     update() {
+        // Время игры
+        this.gameTime += CONFIG.GAME.TICK_INTERVAL;
+        
         // Движение фона
         this.backgroundX = (this.backgroundX - CONFIG.GAME.BACKGROUND_SPEED) % 600;
         
         // Анимации
         this.walkingCycle = (this.walkingCycle + CONFIG.GAME.WALK_ANIMATION_SPEED) % (Math.PI * 2);
         
-        // Расход ресурсов с учетом перков
+        // Расход ресурсов
         const drainMultiplier = this.player.resourceDrainBonus;
         this.player.food = Math.max(0, this.player.food - CONFIG.RESOURCE_DRAIN.FOOD_PER_TICK * drainMultiplier);
         this.player.water = Math.max(0, this.player.water - CONFIG.RESOURCE_DRAIN.WATER_PER_TICK * drainMultiplier);
-        this.player.distance += CONFIG.GAME.DISTANCE_SPEED;
         
-        // Опыт за расстояние
-        this.addExp(CONFIG.GAME.BASE_EXP_PER_KM * CONFIG.GAME.DISTANCE_SPEED);
+        // Дистанция в метрах
+        this.player.distance += CONFIG.GAME.DISTANCE_SPEED;
         
         // Голод и жажда
         if (this.player.food <= 0) {
@@ -174,10 +198,10 @@ class Game {
     }
     
     updateCombat() {
-        // Движение врага к игроку для ближнего боя
-        if (this.currentEnemy.range === 'melee' && this.enemyX > CONFIG.BACKGROUND_POSITIONS.HERO_X + 60) {
+        // Движение врага
+        if (this.currentEnemy.range === 'melee' && this.enemyX > CONFIG.BACKGROUND_POSITIONS.HERO_X + 70) {
             this.enemyIsMoving = true;
-            this.enemyX -= 1.5;
+            this.enemyX -= 1.8;
         } else if (this.currentEnemy.range === 'ranged' && this.enemyX < CONFIG.BACKGROUND_POSITIONS.ENEMY_X) {
             this.enemyIsMoving = true;
             this.enemyX += 0.5;
@@ -187,29 +211,26 @@ class Game {
         
         // Атака врага
         if (this.enemyAttackCooldown <= 0 && this.currentEnemy.hp > 0) {
-            this.enemyAttack();
-            this.enemyAttackCooldown = CONFIG.COMBAT.ENEMY_ATTACK_COOLDOWN;
+            const isInMeleeRange = this.enemyX <= CONFIG.BACKGROUND_POSITIONS.HERO_X + 80;
+            if (this.currentEnemy.range === 'melee' && isInMeleeRange || this.currentEnemy.range === 'ranged') {
+                this.enemyAttack();
+                const attackSpeed = this.currentEnemy.attackSpeed || 1;
+                this.enemyAttackCooldown = CONFIG.COMBAT.ENEMY_ATTACK_COOLDOWN / attackSpeed;
+            }
         } else {
             this.enemyAttackCooldown -= CONFIG.GAME.TICK_INTERVAL;
         }
         
-        // Обновление кулдауна атаки игрока
+        // Кулдаун атаки игрока
         if (this.attackCooldown > 0) {
             this.attackCooldown -= CONFIG.GAME.TICK_INTERVAL;
         }
     }
     
     enemyAttack() {
-        const isInMeleeRange = this.enemyX <= CONFIG.BACKGROUND_POSITIONS.HERO_X + 70;
         let damage = this.currentEnemy.damage;
-        
-        // Проверка дистанции для ближнего боя
-        if (this.currentEnemy.range === 'melee' && !isInMeleeRange) {
-            return;
-        }
-        
-        // Критический удар врага
         const isCritical = Math.random() < 0.1;
+        
         if (isCritical) {
             damage *= 1.5;
             this.addCombatLog(`${this.currentEnemy.name} наносит КРИТИЧЕСКИЙ урон!`, 'combat');
@@ -221,8 +242,7 @@ class Game {
         this.addDamageNumber(finalDamage, CONFIG.BACKGROUND_POSITIONS.HERO_X + 40, CONFIG.BACKGROUND_POSITIONS.HERO_Y);
         this.addCombatLog(`${this.currentEnemy.name} наносит ${finalDamage} урона!`, 'combat');
         
-        // Эффект попадания
-        this.canvas.style.animation = 'shake 0.2s';
+        this.canvas.style.animation = 'hitFlash 0.2s';
         setTimeout(() => {
             this.canvas.style.animation = '';
         }, 200);
@@ -235,59 +255,52 @@ class Game {
     }
     
     playerAttack() {
-        if (this.attackCooldown > 0) {
-            this.addCombatLog(`Перезарядка... (${Math.ceil(this.attackCooldown / 100)}с)`, 'combat');
-            return;
-        }
+        if (this.attackCooldown > 0) return;
         
         const weapon = this.player.weapons[this.player.currentWeapon];
         
-        // Проверка патронов для дальнобойного оружия
         if (weapon.range === 'ranged') {
             if (weapon.ammo <= 0) {
-                this.addCombatLog(TEXTS.EVENTS.COMBAT_MESSAGES.NO_AMMO, 'combat');
+                this.addCombatLog('Нет патронов!', 'combat');
                 return;
             }
             weapon.ammo--;
         }
         
-        // Расчет урона
         let damage = weapon.damage;
         
-        // Бонусы от перков
         if (weapon.range === 'melee') {
             damage *= this.player.meleeDamageBonus;
         } else {
             damage *= this.player.rangedDamageBonus;
         }
         
-        // Бонус берсерка при низком здоровье
         if (this.player.hp < this.player.maxHp * 0.3) {
             damage *= this.player.lowHpBonus;
         }
         
-        // Критический удар
         const isCritical = Math.random() < 0.15;
         if (isCritical) {
             damage *= 2;
-            this.addCombatLog(TEXTS.EVENTS.COMBAT_MESSAGES.CRITICAL, 'combat');
+            this.addCombatLog('КРИТИЧЕСКИЙ УРОН!', 'combat');
         }
         
         this.currentEnemy.hp -= damage;
-        this.addDamageNumber(damage, this.enemyX + 40, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y);
-        this.addCombatLog(`${TEXTS.EVENTS.COMBAT_MESSAGES.HIT} ${damage} урона!`, 'combat');
+        this.addDamageNumber(Math.floor(damage), this.enemyX + 40, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y);
+        this.addCombatLog(`${weapon.name} наносит ${Math.floor(damage)} урона!`, 'combat');
         
-        // Анимация атаки
         if (weapon.range === 'ranged') {
             this.shootAnimation = true;
-            setTimeout(() => { this.shootAnimation = false; }, 200);
+            setTimeout(() => { this.shootAnimation = false; }, 150);
         } else {
             this.meleeAnimation = true;
-            setTimeout(() => { this.meleeAnimation = false; }, 200);
+            setTimeout(() => { this.meleeAnimation = false; }, 150);
         }
         
-        this.attackCooldown = CONFIG.COMBAT.ATTACK_COOLDOWN;
-        this.updateUI();
+        const cooldown = CONFIG.COMBAT.ATTACK_COOLDOWN / this.player.attackSpeedBonus;
+        this.attackCooldown = cooldown;
+        
+        this.updateWeaponButtons();
         
         if (this.currentEnemy.hp <= 0) {
             this.endBattle(true);
@@ -297,7 +310,7 @@ class Game {
     switchWeapon(weaponId) {
         if (this.player.weapons[weaponId]) {
             this.player.currentWeapon = weaponId;
-            this.addCombatLog(`Снаряжено: ${this.player.weapons[weaponId].name}`, 'combat');
+            this.addCombatLog(`Снаряжено: ${this.player.weapons[weaponId].name} ${this.player.weapons[weaponId].icon || ''}`, 'combat');
             this.updateWeaponButtons();
         }
     }
@@ -307,26 +320,20 @@ class Game {
         this.currentEnemy = {
             ...enemy,
             hp: enemy.hp,
-            maxHp: enemy.hp,
-            range: enemy.range || 'melee'
+            maxHp: enemy.hp
         };
         this.enemyX = CONFIG.BACKGROUND_POSITIONS.ENEMY_X;
         this.attackCooldown = 0;
         
-        // Показываем боевую панель
         this.showCombatPanel();
-        
-        // Затемняем фон
         this.canvas.classList.add('combat-overlay');
         
-        this.addLog(`⚔️ Начало боя с ${enemy.name}!`, 'combat');
+        this.addLog(`⚔️ Начало боя с ${enemy.icon || '👾'} ${enemy.name}!`, 'combat');
     }
     
     showCombatPanel() {
-        // Скрываем чат
         document.getElementById('chatPanel').style.display = 'none';
         
-        // Создаем панель боя
         const existingPanel = document.querySelector('.combat-panel');
         if (existingPanel) existingPanel.remove();
         
@@ -338,7 +345,7 @@ class Game {
                     ❤️ ${Math.floor(this.player.hp)}/${this.player.maxHp}
                 </div>
                 <div class="combat-enemy-stats">
-                    👾 ${this.currentEnemy.name}: ${Math.floor(this.currentEnemy.hp)}/${this.currentEnemy.maxHp}
+                    ${this.currentEnemy.icon || '👾'} ${this.currentEnemy.name}: ${Math.floor(this.currentEnemy.hp)}/${this.currentEnemy.maxHp}
                 </div>
             </div>
             <div class="combat-actions">
@@ -350,13 +357,8 @@ class Game {
         
         document.querySelector('.game-container').appendChild(combatPanel);
         
-        // Кнопка атаки
         document.getElementById('combatAttackBtn').onclick = () => this.playerAttack();
-        
-        // Выбор оружия
         this.updateWeaponButtons();
-        
-        // Очищаем лог боя
         document.getElementById('combatLog').innerHTML = '';
     }
     
@@ -366,13 +368,10 @@ class Game {
         
         weaponSelect.innerHTML = '';
         for (const [id, weapon] of Object.entries(this.player.weapons)) {
-            if (weapon.ammo !== null) {
-                weapon.ammo = weapon.ammo || weapon.maxAmmo;
-            }
-            
+            const ammoText = weapon.ammo !== null ? `[${weapon.ammo}/${weapon.maxAmmo}]` : '';
             const btn = document.createElement('button');
             btn.className = `weapon-btn ${this.player.currentWeapon === id ? 'active' : ''}`;
-            btn.innerHTML = `${weapon.name} ${weapon.ammo !== null ? `[${weapon.ammo}/${weapon.maxAmmo}]` : ''}`;
+            btn.innerHTML = `${weapon.icon || '🔫'} ${weapon.name} ${ammoText}`;
             btn.onclick = () => this.switchWeapon(id);
             weaponSelect.appendChild(btn);
         }
@@ -386,37 +385,31 @@ class Game {
             combatLog.appendChild(logEntry);
             combatLog.scrollTop = combatLog.scrollHeight;
         }
-        
         this.addLog(message, type);
     }
     
     endBattle(won) {
         this.inCombat = false;
         
-        // Убираем боевую панель
         const combatPanel = document.querySelector('.combat-panel');
         if (combatPanel) combatPanel.remove();
         
-        // Показываем чат
         document.getElementById('chatPanel').style.display = 'block';
         this.canvas.classList.remove('combat-overlay');
         
         if (won) {
-            const expGain = CONFIG.GAME.BASE_EXP_PER_KILL * this.currentEnemy.level || 1;
+            const expGain = this.currentEnemy.exp || CONFIG.GAME.BASE_EXP_PER_KILL;
             this.addExp(expGain);
             
-            // Лут
             const loot = this.generateLoot();
             if (loot) {
                 this.player.inventory.push(loot);
                 this.addLog(`📦 ${TEXTS.CHAT.FOUND} ${loot.name}!`, 'event');
             }
             
-            // Восстановление здоровья после боя
             const healAmount = Math.floor(this.player.maxHp * 0.1);
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
             this.addLog(`После боя восстановлено ${healAmount} HP`, 'system');
-            
             this.addLog(`✨ Победа! +${expGain} опыта`, 'system');
         } else {
             this.gameOver();
@@ -425,24 +418,24 @@ class Game {
         
         this.currentEnemy = null;
         this.updateUI();
+        this.saveGame();
     }
     
     generateLoot() {
         const rand = Math.random() * this.player.lootChanceBonus;
         
-        if (rand < 0.3) {
+        if (rand < 0.25) {
             return { name: 'Аптечка', type: 'consumable' };
-        } else if (rand < 0.5) {
+        } else if (rand < 0.45) {
             return { name: 'Металлолом', type: 'craft' };
-        } else if (rand < 0.6 && this.player.currentWeapon !== 'knife') {
-            const ammoAmount = Math.floor(Math.random() * 
-                (CONFIG.COMBAT.AMMO_DROP_AMOUNT.max - CONFIG.COMBAT.AMMO_DROP_AMOUNT.min + 1) + 
-                CONFIG.COMBAT.AMMO_DROP_AMOUNT.min) * this.player.ammoDropBonus;
-            
+        } else if (rand < 0.55 && this.player.currentWeapon !== 'knife') {
             const weapon = this.player.weapons[this.player.currentWeapon];
             if (weapon && weapon.ammo !== null) {
-                weapon.ammo = Math.min(weapon.maxAmmo, weapon.ammo + ammoAmount);
-                return { name: `Патроны x${ammoAmount}`, type: 'ammo' };
+                const amount = Math.floor(Math.random() * 
+                    (CONFIG.COMBAT.AMMO_DROP_AMOUNT.max - CONFIG.COMBAT.AMMO_DROP_AMOUNT.min + 1) + 
+                    CONFIG.COMBAT.AMMO_DROP_AMOUNT.min) * this.player.ammoDropBonus;
+                weapon.ammo = Math.min(weapon.maxAmmo, weapon.ammo + amount);
+                return { name: `Патроны x${amount}`, type: 'ammo' };
             }
         }
         
@@ -451,8 +444,8 @@ class Game {
     
     addExp(amount) {
         this.player.exp += amount;
+        this.updateUI();
         
-        // Проверка повышения уровня
         const nextLevel = this.player.level + 1;
         const requiredExp = CONFIG.LEVELS[nextLevel]?.expRequired || Infinity;
         
@@ -465,7 +458,6 @@ class Game {
         this.player.level++;
         const levelInfo = CONFIG.LEVELS[this.player.level];
         
-        // Увеличение характеристик
         this.player.maxHp += 20;
         this.player.hp = this.player.maxHp;
         this.player.baseMaxHp = this.player.maxHp;
@@ -479,17 +471,16 @@ class Game {
         }
         
         this.updateUI();
+        this.saveGame();
     }
     
     triggerRandomEvent() {
         const rand = Math.random();
         
-        if (rand < 0.35) {
-            // Flavor события
+        if (rand < 0.3) {
             const text = TEXTS.EVENTS.FLAVOR[Math.floor(Math.random() * TEXTS.EVENTS.FLAVOR.length)];
             this.addLog(text, 'event');
         } else if (rand < 0.6) {
-            // Лут
             const lootTypes = ['food', 'water', 'medkit', 'scrap'];
             const type = lootTypes[Math.floor(Math.random() * lootTypes.length)];
             
@@ -506,50 +497,58 @@ class Game {
                 this.player.inventory.push({ name: 'Металлолом', type: 'craft' });
                 this.addLog(`📦 Нашли металлолом!`, 'event');
             }
+            this.addExp(CONFIG.GAME.BASE_EXP_PER_EVENT);
         } else if (rand < 0.85) {
-            // Событие с выбором
             this.showRandomChoiceEvent();
         } else {
-            // Бой
-            const enemies = [
-                { name: 'Рейдер', hp: 35, damage: 7, level: 1, range: 'melee' },
-                { name: 'Мутант', hp: 50, damage: 10, level: 2, range: 'melee' },
-                { name: 'Бешеная собака', hp: 25, damage: 5, level: 1, range: 'melee' },
-                { name: 'Снайпер', hp: 30, damage: 12, level: 2, range: 'ranged' }
-            ];
+            const enemies = TEXTS.EVENTS.ENEMIES;
             const enemy = enemies[Math.floor(Math.random() * enemies.length)];
             this.startBattle(enemy);
         }
         
         this.updateUI();
+        this.saveGame();
     }
     
     showRandomChoiceEvent() {
         const events = [
             {
-                text: 'Раненый путешественник просит помощи',
-                options: ['Помочь (+20 HP)', 'Пройти мимо'],
+                text: '👴 Раненый сталкер просит помощи',
+                options: ['Помочь (+20 HP, +20 exp)', 'Пройти мимо'],
                 effects: [() => {
                     this.player.hp = Math.min(this.player.maxHp, this.player.hp + 20);
-                    this.addLog('Вы помогли путешественнику и восстановили здоровье!', 'system');
+                    this.addExp(20);
+                    this.addLog('Вы помогли сталкеру и получили опыт!', 'system');
                 }, () => {
                     this.addLog('Вы прошли мимо...', 'system');
                 }]
             },
             {
-                text: 'Заброшенный склад с припасами',
+                text: '🏚️ Заброшенный бункер',
                 options: ['Обыскать', 'Уйти'],
                 effects: [() => {
                     const rand = Math.random();
                     if (rand < 0.5) {
                         this.player.food = Math.min(100, this.player.food + 30);
-                        this.addLog('Нашли консервы! +30 еды', 'event');
+                        this.player.water = Math.min(100, this.player.water + 30);
+                        this.addLog('Нашли припасы! +30 еды и воды', 'event');
                     } else {
                         this.player.inventory.push({ name: 'Аптечка', type: 'consumable' });
                         this.addLog('Нашли аптечку!', 'event');
                     }
+                    this.addExp(15);
                 }, () => {
                     this.addLog('Решили не рисковать', 'system');
+                }]
+            },
+            {
+                text: '📻 Радиосигнал о помощи',
+                options: ['Ответить', 'Игнорировать'],
+                effects: [() => {
+                    this.addExp(30);
+                    this.addLog('Вы помогли выжившим! +30 опыта', 'system');
+                }, () => {
+                    this.addLog('Вы проигнорировали сигнал', 'system');
                 }]
             }
         ];
@@ -577,6 +576,7 @@ class Game {
                 this.startGameLoop();
                 this.startEventTimer();
                 this.updateUI();
+                this.saveGame();
             };
             optionsDiv.appendChild(btn);
         });
@@ -596,7 +596,7 @@ class Game {
     updateDamageNumbers() {
         for (let i = 0; i < this.showDamageNumbers.length; i++) {
             this.showDamageNumbers[i].life -= 0.02;
-            this.showDamageNumbers[i].y -= 1;
+            this.showDamageNumbers[i].y -= 1.5;
             
             if (this.showDamageNumbers[i].life <= 0) {
                 this.showDamageNumbers.splice(i, 1);
@@ -608,11 +608,14 @@ class Game {
     draw() {
         this.ctx.clearRect(0, 0, 600, 400);
         
-        // Фон
+        // Небо
         if (this.sprites.SKY) {
             this.ctx.drawImage(this.sprites.SKY, 0, CONFIG.BACKGROUND_POSITIONS.SKY_Y, 600, 200);
         } else {
-            this.ctx.fillStyle = '#1a1a2e';
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#2a2a3e');
+            this.ctx.fillStyle = gradient;
             this.ctx.fillRect(0, 0, 600, 200);
         }
         
@@ -640,9 +643,9 @@ class Game {
             }
         }
         
-        // Враг в бою
+        // Враг
         if (this.inCombat && this.currentEnemy) {
-            const enemySpriteKey = `ENEMY_${this.currentEnemy.name.toUpperCase()}`;
+            const enemySpriteKey = `ENEMY_${this.currentEnemy.name.toUpperCase().replace(' ', '_')}`;
             const enemySprite = this.sprites[enemySpriteKey] || this.sprites.ENEMY_RAIDER;
             
             if (enemySprite) {
@@ -652,7 +655,6 @@ class Game {
                 this.ctx.fillRect(this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y, 60, 70);
             }
             
-            // Полоска здоровья врага
             const hpPercent = this.currentEnemy.hp / this.currentEnemy.maxHp;
             this.ctx.fillStyle = '#8b0000';
             this.ctx.fillRect(this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y - 15, 80, 8);
@@ -660,7 +662,7 @@ class Game {
             this.ctx.fillRect(this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y - 15, 80 * hpPercent, 8);
         }
         
-        // Анимация стрельбы
+        // Герой
         let heroSprite = this.sprites.HERO_IDLE;
         if (this.shootAnimation && this.sprites.HERO_SHOOT) {
             heroSprite = this.sprites.HERO_SHOOT;
@@ -671,7 +673,6 @@ class Game {
             heroSprite = this.sprites[isWalking ? 'HERO_WALK1' : 'HERO_WALK2'] || this.sprites.HERO_IDLE;
         }
         
-        // Герой
         const walkOffset = !this.inCombat ? Math.sin(this.walkingCycle) * 2 : 0;
         if (heroSprite) {
             this.ctx.drawImage(heroSprite, CONFIG.BACKGROUND_POSITIONS.HERO_X, CONFIG.BACKGROUND_POSITIONS.HERO_Y + walkOffset, 80, 80);
@@ -682,7 +683,7 @@ class Game {
             this.ctx.fillRect(CONFIG.BACKGROUND_POSITIONS.HERO_X + 10, CONFIG.BACKGROUND_POSITIONS.HERO_Y + walkOffset - 10, 20, 20);
         }
         
-        // Оружие в руках героя
+        // Оружие
         const weapon = this.player.weapons[this.player.currentWeapon];
         const weaponSpriteKey = weapon.name.toUpperCase().replace(' ', '_');
         if (this.sprites[weaponSpriteKey]) {
@@ -692,7 +693,7 @@ class Game {
         }
         
         // Анимация выстрела
-        if (this.shootAnimation && weapon.range === 'ranged') {
+        if (this.shootAnimation && weapon.range === 'ranged' && this.inCombat) {
             this.ctx.fillStyle = '#ffff00';
             this.ctx.beginPath();
             this.ctx.moveTo(CONFIG.BACKGROUND_POSITIONS.WEAPON_X + 32, CONFIG.BACKGROUND_POSITIONS.WEAPON_Y + 16);
@@ -703,8 +704,8 @@ class Game {
         
         // Цифры урона
         for (const damage of this.showDamageNumbers) {
-            this.ctx.font = 'bold 16px monospace';
-            this.ctx.fillStyle = `rgba(255, 0, 0, ${damage.life})`;
+            this.ctx.font = 'bold 18px monospace';
+            this.ctx.fillStyle = `rgba(255, 50, 50, ${damage.life})`;
             this.ctx.shadowBlur = 4;
             this.ctx.shadowColor = 'black';
             this.ctx.fillText(Math.floor(damage.value), damage.x, damage.y);
@@ -733,14 +734,15 @@ class Game {
     }
     
     closeInventory() {
-        document.getElementById('inventoryModal').style.display = 'none';
+        const modal = document.getElementById('inventoryModal');
+        if (modal) modal.style.display = 'none';
     }
     
     useItem(index) {
         const item = this.player.inventory[index];
         
         if (item.name === 'Аптечка') {
-            const healAmount = Math.floor(20 * this.player.healBonus);
+            const healAmount = Math.floor(25 * this.player.healBonus);
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
             this.addLog(`💊 Использовали аптечку +${healAmount} HP`, 'system');
             this.player.inventory.splice(index, 1);
@@ -753,15 +755,16 @@ class Game {
                 this.player.inventory.splice(index, 1);
             }
         } else if (item.name === 'Металлолом') {
-            this.addLog('Металлолом можно использовать для крафта', 'system');
+            this.craftFromInventory();
             return;
         }
         
         this.updateUI();
         this.showInventory();
+        this.saveGame();
     }
     
-    craft() {
+    craftFromInventory() {
         const metalCount = this.player.inventory.filter(i => i.name === 'Металлолом').length;
         
         if (metalCount >= 2) {
@@ -773,13 +776,17 @@ class Game {
                     i--;
                 }
             }
-            this.player.inventory.push({ name: 'Самодельный нож', type: 'weapon' });
-            this.player.weapons.knife.damage += 4;
-            this.addLog(`🔧 ${TEXTS.CHAT.CRAFTED} Самодельный нож! Урон +4`, 'system');
+            this.player.weapons.knife.damage += 5;
+            this.addLog(`🔧 Улучшили нож! Урон +5`, 'system');
             this.updateUI();
+            this.saveGame();
         } else {
-            this.addLog('❌ Нужно 2 металлолома для крафта ножа!', 'system');
+            this.addLog('❌ Нужно 2 металлолома для улучшения ножа!', 'system');
         }
+    }
+    
+    craft() {
+        this.craftFromInventory();
     }
     
     showPerks() {
@@ -799,7 +806,7 @@ class Game {
             const perkDiv = document.createElement('div');
             perkDiv.className = `perk-item ${!isUnlocked || isOwned ? 'perk-locked' : ''}`;
             perkDiv.innerHTML = `
-                <div class="perk-name">${perk.icon} ${perk.name}</div>
+                <div class="perk-name" style="color: ${perk.color}">${perk.icon} ${perk.name}</div>
                 <div class="perk-desc">${perk.description}</div>
                 <div class="perk-desc">⭐ Требуется уровень ${perk.requiredLevel}</div>
             `;
@@ -824,8 +831,8 @@ class Game {
             <div class="modal-content">
                 <h3>⭐ ПЕРКИ</h3>
                 <div id="perksList" class="perks-grid"></div>
-                <div style="margin-top: 10px; font-size: 10px; text-align: center;">
-                    Доступно очков: ${this.player.perkPoints}
+                <div style="margin-top: 10px; font-size: 11px; text-align: center; color: #d4a043;">
+                    ${TEXTS.MODAL.PERK_POINTS}: ${this.player.perkPoints}
                 </div>
                 <button class="modal-close" onclick="document.getElementById('perksModal').style.display='none'">Закрыть</button>
             </div>
@@ -859,18 +866,21 @@ class Game {
         this.addLog(`✨ Изучен перк: ${perk.name}!`, 'level');
         this.updateUI();
         
-        document.getElementById('perksModal').style.display = 'none';
+        const modal = document.getElementById('perksModal');
+        if (modal) modal.style.display = 'none';
         setTimeout(() => this.showPerks(), 100);
+        this.saveGame();
     }
     
     rest() {
-        if (this.player.food > 5 && this.player.water > 5) {
-            const heal = Math.floor(Math.random() * 15) + 10;
+        if (this.player.food > 8 && this.player.water > 8) {
+            const heal = Math.floor(Math.random() * 20) + 15;
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
-            this.player.food -= 5;
-            this.player.water -= 5;
+            this.player.food -= 8;
+            this.player.water -= 8;
             this.addLog(`🔥 ${TEXTS.CHAT.RESTED} ${heal} HP`, 'system');
             this.updateUI();
+            this.saveGame();
         } else {
             this.addLog('❌ Недостаточно еды или воды для отдыха!', 'system');
         }
@@ -892,17 +902,17 @@ class Game {
         document.getElementById('foodValue').textContent = Math.floor(this.player.food);
         document.getElementById('waterValue').textContent = Math.floor(this.player.water);
         document.getElementById('expValue').textContent = Math.floor(this.player.exp);
-        document.getElementById('distanceValue').textContent = Math.floor(this.player.distance);
         document.getElementById('levelValue').textContent = this.player.level;
-        
-        this.saveGame();
     }
     
     addLog(message, type = 'event') {
         const chatMessages = document.getElementById('chatMessages');
         const logEntry = document.createElement('div');
         logEntry.className = `chat-message ${type}`;
-        logEntry.textContent = `[${Math.floor(this.player.distance)}${TEXTS.CHAT.DISTANCE}] ${message}`;
+        
+        const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        logEntry.textContent = `[${time}] ${message}`;
+        
         chatMessages.appendChild(logEntry);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
@@ -933,9 +943,11 @@ class Game {
                 resourceDrainBonus: this.player.resourceDrainBonus,
                 lowHpBonus: this.player.lowHpBonus,
                 ammoDropBonus: this.player.ammoDropBonus,
-                healBonus: this.player.healBonus
+                healBonus: this.player.healBonus,
+                attackSpeedBonus: this.player.attackSpeedBonus
             },
             activePerks: PERKS.active,
+            gameTime: this.gameTime,
             timestamp: Date.now()
         };
         chrome.storage.local.set({ gameSave: saveData });
@@ -946,8 +958,8 @@ class Game {
             if (result.gameSave && result.gameSave.player) {
                 this.player = result.gameSave.player;
                 PERKS.active = result.gameSave.activePerks || [];
+                this.gameTime = result.gameSave.gameTime || 0;
                 
-                // Восстанавливаем эффекты перков
                 PERKS.clearPerkEffects(this.player);
                 for (const perkId of PERKS.active) {
                     PERKS.applyPerkEffects(this.player, perkId);
@@ -962,6 +974,7 @@ class Game {
     gameOver() {
         clearInterval(this.gameLoop);
         clearInterval(this.eventTimer);
+        clearInterval(this.distanceReportTimer);
         
         if (this.inCombat) {
             const combatPanel = document.querySelector('.combat-panel');
@@ -969,7 +982,7 @@ class Game {
         }
         
         this.addLog(TEXTS.CHAT.GAME_OVER, 'system');
-        this.addLog(`🏆 Пройдено: ${Math.floor(this.player.distance)} км, Уровень: ${this.player.level}`, 'system');
+        this.addLog(`🏆 Пройдено: ${Math.floor(this.player.distance)} метров, Уровень: ${this.player.level}`, 'system');
         
         setTimeout(() => {
             if (confirm('Игра окончена! Начать заново?')) {

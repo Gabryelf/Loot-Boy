@@ -8,36 +8,47 @@
 body {
     width: 600px;
     height: 500px;
-    background: #0a0a0a;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     overflow: hidden;
     font-family: 'Courier New', 'Monaco', monospace;
 }
 
 /* Анимации */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
+    from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
 }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    75% { transform: translateX(3px); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
 }
 
-@keyframes hitEffect {
+@keyframes glow {
+    0% { box-shadow: 0 0 5px rgba(212, 160, 67, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(212, 160, 67, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(212, 160, 67, 0.3); }
+}
+
+@keyframes hitFlash {
     0% { filter: brightness(1); }
-    50% { filter: brightness(2); }
+    50% { filter: brightness(1.5); background: rgba(255, 0, 0, 0.3); }
     100% { filter: brightness(1); }
 }
 
@@ -57,48 +68,64 @@ body {
     height: 400px;
     display: block;
     cursor: crosshair;
+    transition: filter 0.3s;
 }
 
-/* Затемнение при бое */
 #gameCanvas.combat-overlay {
-    filter: brightness(0.7);
-    transition: filter 0.3s;
+    filter: brightness(0.6) blur(1px);
 }
 
 /* Верхняя панель */
 .top-bar {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 10px;
+    right: 10px;
     display: flex;
-    gap: 6px;
+    gap: 8px;
     z-index: 20;
 }
 
 .icon-btn {
-    background: rgba(0, 0, 0, 0.85);
-    border: 1px solid #6b5a48;
-    border-radius: 6px;
-    padding: 5px;
+    background: linear-gradient(135deg, rgba(30, 20, 10, 0.95) 0%, rgba(20, 15, 5, 0.95) 100%);
+    border: 1px solid #d4a043;
+    border-radius: 8px;
+    padding: 6px;
     cursor: pointer;
-    transition: all 0.2s;
-    width: 34px;
-    height: 34px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+}
+
+.icon-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 160, 67, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.icon-btn:hover::before {
+    left: 100%;
 }
 
 .icon-btn:hover {
-    background: rgba(30, 20, 10, 0.95);
-    transform: scale(1.05);
-    border-color: #d4a043;
-    box-shadow: 0 0 8px rgba(212, 160, 67, 0.3);
+    transform: translateY(-2px) scale(1.05);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(212, 160, 67, 0.5);
+    animation: glow 1.5s infinite;
 }
 
 .icon-btn:active {
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.98);
 }
 
 .icon-btn canvas {
@@ -109,51 +136,60 @@ body {
 /* Статус бар */
 .status-bar {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    background: rgba(0, 0, 0, 0.85);
-    border: 1px solid #6b5a48;
-    border-radius: 6px;
-    padding: 6px 12px;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(20, 15, 5, 0.9) 100%);
+    border: 1px solid #d4a043;
+    border-radius: 8px;
+    padding: 8px 15px;
     display: flex;
-    gap: 16px;
+    gap: 20px;
     z-index: 20;
-    backdrop-filter: blur(4px);
-    font-size: 11px;
+    backdrop-filter: blur(8px);
+    font-size: 12px;
+    font-weight: bold;
+    animation: slideInLeft 0.3s;
 }
 
 .status-item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     color: #d4a043;
-    font-weight: bold;
-    text-shadow: 1px 1px 0 #000;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s;
+}
+
+.status-item:hover {
+    transform: scale(1.05);
+    color: #ffd700;
 }
 
 .status-icon {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    filter: drop-shadow(0 0 2px rgba(212, 160, 67, 0.5));
 }
 
 /* Чат панель */
 .chat-panel {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
-    height: 110px;
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid #6b5a48;
-    border-radius: 6px;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 120px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(10, 10, 5, 0.95) 100%);
+    border: 1px solid #d4a043;
+    border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
     z-index: 20;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    animation: slideInRight 0.3s;
 }
 
 .chat-panel.collapsed {
-    height: 30px;
+    height: 32px;
 }
 
 .chat-panel.collapsed .chat-messages {
@@ -163,117 +199,166 @@ body {
 .chat-panel.collapsed::before {
     content: "📋 Чат свернут ▼";
     display: block;
-    padding: 5px;
+    padding: 6px;
     text-align: center;
     color: #d4a043;
-    font-size: 10px;
+    font-size: 11px;
     cursor: pointer;
+    font-weight: bold;
 }
 
 .chat-messages {
     height: 100%;
     overflow-y: auto;
-    padding: 6px;
-    font-size: 10px;
+    padding: 8px;
+    font-size: 11px;
     font-family: monospace;
 }
 
 .chat-message {
-    margin: 3px 0;
+    margin: 4px 0;
     animation: fadeIn 0.2s;
     word-wrap: break-word;
-    line-height: 1.3;
+    line-height: 1.4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.chat-message:hover {
+    background: rgba(212, 160, 67, 0.1);
+    transform: translateX(4px);
 }
 
 .chat-message.system {
     color: #d4a043;
+    border-left: 2px solid #d4a043;
 }
 
 .chat-message.event {
-    color: #4a9eff;
+    color: #4ecdc4;
+    border-left: 2px solid #4ecdc4;
 }
 
 .chat-message.combat {
-    color: #ff6347;
+    color: #ff6b6b;
+    border-left: 2px solid #ff6b6b;
     font-weight: bold;
 }
 
 .chat-message.level {
     color: #ffd700;
+    border-left: 2px solid #ffd700;
     font-weight: bold;
-    text-shadow: 0 0 3px #ffd700;
+    text-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+}
+
+.chat-message.time {
+    color: #a29bfe;
+    border-left: 2px solid #a29bfe;
 }
 
 /* Скроллбар */
 .chat-messages::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
 }
 
 .chat-messages::-webkit-scrollbar-track {
     background: #2a1a0a;
+    border-radius: 3px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: #6b5a48;
-    border-radius: 2px;
+    background: #d4a043;
+    border-radius: 3px;
+    transition: all 0.2s;
 }
 
-/* Боевая панель (поверх чата) */
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #ffd700;
+}
+
+/* Боевая панель */
 .combat-panel {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
-    background: rgba(0, 0, 0, 0.95);
-    border: 2px solid #8b0000;
-    border-radius: 8px;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(30, 15, 5, 0.98) 100%);
+    border: 2px solid #ff6b6b;
+    border-radius: 10px;
     padding: 12px;
     z-index: 30;
-    animation: slideIn 0.3s;
-    backdrop-filter: blur(8px);
+    animation: slideInRight 0.3s;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
 }
 
 .combat-stats {
     display: flex;
     justify-content: space-between;
     margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #8b0000;
-    font-size: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ff6b6b;
+    font-size: 13px;
+    font-weight: bold;
 }
 
 .combat-player-stats, .combat-enemy-stats {
-    color: #d4a043;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.combat-player-stats {
+    color: #4ecdc4;
 }
 
 .combat-enemy-stats {
-    color: #ff6347;
+    color: #ff6b6b;
 }
 
 .combat-actions {
     display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
 .combat-actions button {
     flex: 1;
-    padding: 8px;
-    background: #2a1a0a;
+    padding: 10px;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
     color: #d4a043;
-    border: 1px solid #6b5a48;
-    border-radius: 4px;
+    border: 1px solid #d4a043;
+    border-radius: 6px;
     cursor: pointer;
     font-family: monospace;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.combat-actions button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 160, 67, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.combat-actions button:hover::before {
+    left: 100%;
 }
 
 .combat-actions button:hover {
-    background: #4a3a2a;
-    transform: translateY(-1px);
-    border-color: #d4a043;
+    background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .combat-actions button:active {
@@ -282,49 +367,58 @@ body {
 
 .weapon-select {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 10px;
-    padding: 6px;
+    padding: 8px;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .weapon-btn {
-    padding: 4px 8px;
-    background: #1a0a00;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #1a0a00 0%, #0a0500 100%);
     border: 1px solid #6b5a48;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     font-size: 10px;
     color: #d4a043;
     transition: all 0.2s;
+    font-weight: bold;
 }
 
 .weapon-btn.active {
-    background: #8b0000;
+    background: linear-gradient(135deg, #8b0000 0%, #6b0000 100%);
     border-color: #d4a043;
     color: #fff;
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
 }
 
-.weapon-btn:hover {
+.weapon-btn:hover:not(.active) {
     background: #4a3a2a;
+    transform: translateY(-1px);
 }
 
 .combat-log {
-    height: 60px;
+    height: 70px;
     overflow-y: auto;
-    font-size: 9px;
-    color: #4a9eff;
+    font-size: 10px;
+    color: #4ecdc4;
     margin-top: 8px;
-    padding: 4px;
+    padding: 6px;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
+    border-radius: 5px;
     font-family: monospace;
 }
 
 .combat-log div {
-    margin: 2px 0;
+    margin: 3px 0;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.combat-log div:hover {
+    background: rgba(78, 205, 196, 0.1);
 }
 
 /* Модальные окна */
@@ -334,108 +428,138 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.95);
+    background: rgba(0, 0, 0, 0.98);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 100;
-    animation: fadeIn 0.2s;
+    animation: fadeIn 0.3s;
+    backdrop-filter: blur(8px);
 }
 
 .modal-content {
-    background: #1a0f05;
-    border: 2px solid #6b5a48;
-    border-radius: 8px;
-    padding: 16px;
-    min-width: 260px;
-    max-width: 380px;
+    background: linear-gradient(135deg, #1a0f05 0%, #0f0a03 100%);
+    border: 2px solid #d4a043;
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 280px;
+    max-width: 400px;
     color: #d4a043;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    animation: slideInRight 0.3s;
 }
 
 .modal-content h3 {
-    margin-bottom: 12px;
+    margin-bottom: 15px;
     text-align: center;
-    font-size: 14px;
-    color: #d4a043;
-    border-bottom: 1px solid #6b5a48;
-    padding-bottom: 6px;
+    font-size: 16px;
+    color: #ffd700;
+    border-bottom: 2px solid #d4a043;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .modal-close {
-    margin-top: 12px;
-    padding: 6px 12px;
-    background: #2a1a0a;
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
     color: #d4a043;
-    border: 1px solid #6b5a48;
-    border-radius: 4px;
+    border: 1px solid #d4a043;
+    border-radius: 6px;
     cursor: pointer;
     font-family: monospace;
     width: 100%;
+    font-weight: bold;
     transition: all 0.2s;
 }
 
 .modal-close:hover {
-    background: #4a3a2a;
+    background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .inventory-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 12px 0;
-    max-height: 200px;
+    gap: 10px;
+    margin: 15px 0;
+    max-height: 250px;
     overflow-y: auto;
+    padding: 5px;
 }
 
 .inventory-item {
-    background: #2a1a0a;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
     border: 1px solid #6b5a48;
-    padding: 8px;
+    padding: 10px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 10px;
-    border-radius: 4px;
+    font-size: 11px;
+    border-radius: 6px;
+    font-weight: bold;
 }
 
 .inventory-item:hover {
-    background: #4a3a2a;
-    transform: scale(1.02);
+    background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+    transform: scale(1.05);
     border-color: #d4a043;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Перки */
 .perks-grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 12px 0;
-    max-height: 250px;
+    gap: 12px;
+    margin: 15px 0;
+    max-height: 300px;
     overflow-y: auto;
+    padding: 5px;
 }
 
 .perk-item {
-    background: #2a1a0a;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
     border: 1px solid #6b5a48;
-    padding: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border-radius: 4px;
+    padding: 12px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
 }
 
-.perk-item:hover {
-    background: #4a3a2a;
-    transform: translateX(4px);
+.perk-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 160, 67, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.perk-item:hover::before {
+    left: 100%;
+}
+
+.perk-item:not(.perk-locked):hover {
+    transform: translateX(8px);
+    border-color: #d4a043;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .perk-name {
     font-weight: bold;
     color: #d4a043;
-    font-size: 12px;
+    font-size: 13px;
+    margin-bottom: 5px;
 }
 
 .perk-desc {
-    font-size: 9px;
+    font-size: 10px;
     color: #8b7355;
     margin-top: 4px;
 }
@@ -443,47 +567,55 @@ body {
 .perk-locked {
     opacity: 0.5;
     cursor: not-allowed;
+    filter: grayscale(0.3);
+}
+
+.perk-locked:hover {
+    transform: none;
 }
 
 .option-button {
     display: block;
     width: 100%;
-    margin: 8px 0;
-    padding: 8px;
-    background: #2a1a0a;
+    margin: 10px 0;
+    padding: 10px;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
     color: #d4a043;
     border: 1px solid #6b5a48;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-family: monospace;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: bold;
     transition: all 0.2s;
 }
 
 .option-button:hover {
-    background: #4a3a2a;
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+    transform: translateX(5px);
+    border-color: #d4a043;
 }
 
 /* Анимация урона */
 .damage-number {
     position: absolute;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #ff0000;
-    text-shadow: 1px 1px 0 #000;
+    text-shadow: 2px 2px 0 #000;
     pointer-events: none;
     animation: fadeOutUp 0.8s forwards;
     z-index: 50;
+    font-family: monospace;
 }
 
 @keyframes fadeOutUp {
     0% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
     100% {
         opacity: 0;
-        transform: translateY(-40px);
+        transform: translateY(-50px) scale(1.5);
     }
 }
