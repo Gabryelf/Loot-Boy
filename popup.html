@@ -44,10 +44,6 @@
                 <span id="expValue">0</span>
             </div>
             <div class="status-item">
-                <canvas class="status-icon" data-icon="distance" width="16" height="16"></canvas>
-                <span id="distanceValue">0</span>
-            </div>
-            <div class="status-item">
                 🎯 <span id="levelValue">1</span>
             </div>
         </div>
@@ -67,8 +63,27 @@
         <div id="inventoryModal" class="modal" style="display: none;">
             <div class="modal-content">
                 <h3>📦 ИНВЕНТАРЬ</h3>
+                <div class="equipment-section">
+                    <div class="equipment-slot">
+                        <h4>⚔️ Оружие</h4>
+                        <div id="currentWeaponSlot" class="equipment-item"></div>
+                        <div class="weapon-switch">
+                            <button id="prevWeaponBtn" class="switch-btn">◀</button>
+                            <button id="nextWeaponBtn" class="switch-btn">▶</button>
+                        </div>
+                    </div>
+                    <div class="equipment-slot">
+                        <h4>🛡️ Броня</h4>
+                        <div id="currentArmorSlot" class="equipment-item"></div>
+                        <div class="armor-switch">
+                            <button id="prevArmorBtn" class="switch-btn">◀</button>
+                            <button id="nextArmorBtn" class="switch-btn">▶</button>
+                        </div>
+                    </div>
+                </div>
+                <h4>📦 Предметы</h4>
                 <div id="inventoryList" class="inventory-grid"></div>
-                <button class="modal-close" onclick="window.game.closeInventory()">Закрыть</button>
+                <button id="closeInventoryBtn" class="modal-close">Закрыть</button>
             </div>
         </div>
     </div>

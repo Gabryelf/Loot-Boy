@@ -20,9 +20,13 @@ class Game {
             distance: CONFIG.PLAYER.START_DISTANCE,
             inventory: [],
             currentWeapon: CONFIG.PLAYER.START_WEAPON,
+            currentArmor: CONFIG.PLAYER.START_ARMOR_ITEM,
             weapons: JSON.parse(JSON.stringify(CONFIG.PLAYER.WEAPONS)),
+            armorItems: JSON.parse(JSON.stringify(CONFIG.PLAYER.ARMOR)),
             armor: CONFIG.PLAYER.START_ARMOR,
             perkPoints: 0,
+            weaponIndex: 0,
+            armorIndex: 0,
             
             meleeDamageBonus: 1,
             rangedDamageBonus: 1,
@@ -34,6 +38,12 @@ class Game {
             attackSpeedBonus: 1
         };
         
+        // Список доступного оружия и брони
+        this.weaponList = Object.keys(this.player.weapons);
+        this.armorList = Object.keys(this.player.armorItems);
+        this.player.weaponIndex = this.weaponList.indexOf(this.player.currentWeapon);
+        this.player.armorIndex = this.armorList.indexOf(this.player.currentArmor);
+        
         // Время игры
         this.gameTime = 0;
         this.lastDistanceReport = 0;
@@ -44,7 +54,6 @@ class Game {
         this.attackCooldown = 0;
         this.enemyAttackCooldown = 0;
         this.enemyX = CONFIG.BACKGROUND_POSITIONS.ENEMY_X;
-        this.enemyIsMoving = false;
         this.showDamageNumbers = [];
         
         // Игровые переменные
@@ -56,7 +65,6 @@ class Game {
         this.isChatCollapsed = false;
         this.shootAnimation = false;
         this.meleeAnimation = false;
-        this.lastSecond = 0;
         
         // Спрайты
         this.sprites = {};
@@ -80,6 +88,7 @@ class Game {
         const spritePaths = {
             ...CONFIG.SPRITES.CHARACTERS,
             ...CONFIG.SPRITES.WEAPONS,
+            ...CONFIG.SPRITES.ARMOR,
             ...CONFIG.SPRITES.BACKGROUND,
             ...CONFIG.SPRITES.ICONS
         };
@@ -157,24 +166,15 @@ class Game {
     }
     
     update() {
-        // Время игры
         this.gameTime += CONFIG.GAME.TICK_INTERVAL;
-        
-        // Движение фона
         this.backgroundX = (this.backgroundX - CONFIG.GAME.BACKGROUND_SPEED) % 600;
-        
-        // Анимации
         this.walkingCycle = (this.walkingCycle + CONFIG.GAME.WALK_ANIMATION_SPEED) % (Math.PI * 2);
         
-        // Расход ресурсов
         const drainMultiplier = this.player.resourceDrainBonus;
         this.player.food = Math.max(0, this.player.food - CONFIG.RESOURCE_DRAIN.FOOD_PER_TICK * drainMultiplier);
         this.player.water = Math.max(0, this.player.water - CONFIG.RESOURCE_DRAIN.WATER_PER_TICK * drainMultiplier);
-        
-        // Дистанция в метрах
         this.player.distance += CONFIG.GAME.DISTANCE_SPEED;
         
-        // Голод и жажда
         if (this.player.food <= 0) {
             this.player.hp = Math.max(0, this.player.hp - CONFIG.RESOURCE_DRAIN.STARVE_DAMAGE);
         }
@@ -182,14 +182,11 @@ class Game {
             this.player.hp = Math.max(0, this.player.hp - CONFIG.RESOURCE_DRAIN.THIRST_DAMAGE);
         }
         
-        // Боевая логика
         if (this.inCombat && this.currentEnemy) {
             this.updateCombat();
         }
         
-        // Обновление анимаций урона
         this.updateDamageNumbers();
-        
         this.updateUI();
         
         if (this.player.hp <= 0) {
@@ -198,30 +195,13 @@ class Game {
     }
     
     updateCombat() {
-        // Движение врага
-        if (this.currentEnemy.range === 'melee' && this.enemyX > CONFIG.BACKGROUND_POSITIONS.HERO_X + 70) {
-            this.enemyIsMoving = true;
-            this.enemyX -= 1.8;
-        } else if (this.currentEnemy.range === 'ranged' && this.enemyX < CONFIG.BACKGROUND_POSITIONS.ENEMY_X) {
-            this.enemyIsMoving = true;
-            this.enemyX += 0.5;
-        } else {
-            this.enemyIsMoving = false;
-        }
-        
-        // Атака врага
         if (this.enemyAttackCooldown <= 0 && this.currentEnemy.hp > 0) {
-            const isInMeleeRange = this.enemyX <= CONFIG.BACKGROUND_POSITIONS.HERO_X + 80;
-            if (this.currentEnemy.range === 'melee' && isInMeleeRange || this.currentEnemy.range === 'ranged') {
-                this.enemyAttack();
-                const attackSpeed = this.currentEnemy.attackSpeed || 1;
-                this.enemyAttackCooldown = CONFIG.COMBAT.ENEMY_ATTACK_COOLDOWN / attackSpeed;
-            }
+            this.enemyAttack();
+            this.enemyAttackCooldown = CONFIG.COMBAT.ENEMY_ATTACK_COOLDOWN;
         } else {
             this.enemyAttackCooldown -= CONFIG.GAME.TICK_INTERVAL;
         }
         
-        // Кулдаун атаки игрока
         if (this.attackCooldown > 0) {
             this.attackCooldown -= CONFIG.GAME.TICK_INTERVAL;
         }
@@ -233,14 +213,14 @@ class Game {
         
         if (isCritical) {
             damage *= 1.5;
-            this.addCombatLog(`${this.currentEnemy.name} наносит КРИТИЧЕСКИЙ урон!`, 'combat');
+            this.addLog(`${this.currentEnemy.name} наносит КРИТИЧЕСКИЙ урон!`, 'combat');
         }
         
-        const finalDamage = Math.max(1, damage - this.player.armor);
+        const finalDamage = Math.max(1, Math.floor(damage - this.player.armor));
         this.player.hp = Math.max(0, this.player.hp - finalDamage);
         
         this.addDamageNumber(finalDamage, CONFIG.BACKGROUND_POSITIONS.HERO_X + 40, CONFIG.BACKGROUND_POSITIONS.HERO_Y);
-        this.addCombatLog(`${this.currentEnemy.name} наносит ${finalDamage} урона!`, 'combat');
+        this.addLog(`${this.currentEnemy.name} наносит ${finalDamage} урона!`, 'combat');
         
         this.canvas.style.animation = 'hitFlash 0.2s';
         setTimeout(() => {
@@ -261,7 +241,7 @@ class Game {
         
         if (weapon.range === 'ranged') {
             if (weapon.ammo <= 0) {
-                this.addCombatLog('Нет патронов!', 'combat');
+                this.addLog('Нет патронов!', 'combat');
                 return;
             }
             weapon.ammo--;
@@ -282,12 +262,12 @@ class Game {
         const isCritical = Math.random() < 0.15;
         if (isCritical) {
             damage *= 2;
-            this.addCombatLog('КРИТИЧЕСКИЙ УРОН!', 'combat');
+            this.addLog('КРИТИЧЕСКИЙ УРОН!', 'combat');
         }
         
         this.currentEnemy.hp -= damage;
         this.addDamageNumber(Math.floor(damage), this.enemyX + 40, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y);
-        this.addCombatLog(`${weapon.name} наносит ${Math.floor(damage)} урона!`, 'combat');
+        this.addLog(`${weapon.name} наносит ${Math.floor(damage)} урона!`, 'combat');
         
         if (weapon.range === 'ranged') {
             this.shootAnimation = true;
@@ -300,18 +280,8 @@ class Game {
         const cooldown = CONFIG.COMBAT.ATTACK_COOLDOWN / this.player.attackSpeedBonus;
         this.attackCooldown = cooldown;
         
-        this.updateWeaponButtons();
-        
         if (this.currentEnemy.hp <= 0) {
             this.endBattle(true);
-        }
-    }
-    
-    switchWeapon(weaponId) {
-        if (this.player.weapons[weaponId]) {
-            this.player.currentWeapon = weaponId;
-            this.addCombatLog(`Снаряжено: ${this.player.weapons[weaponId].name} ${this.player.weapons[weaponId].icon || ''}`, 'combat');
-            this.updateWeaponButtons();
         }
     }
     
@@ -322,79 +292,14 @@ class Game {
             hp: enemy.hp,
             maxHp: enemy.hp
         };
-        this.enemyX = CONFIG.BACKGROUND_POSITIONS.ENEMY_X;
         this.attackCooldown = 0;
         
-        this.showCombatPanel();
         this.canvas.classList.add('combat-overlay');
-        
         this.addLog(`⚔️ Начало боя с ${enemy.icon || '👾'} ${enemy.name}!`, 'combat');
-    }
-    
-    showCombatPanel() {
-        document.getElementById('chatPanel').style.display = 'none';
-        
-        const existingPanel = document.querySelector('.combat-panel');
-        if (existingPanel) existingPanel.remove();
-        
-        const combatPanel = document.createElement('div');
-        combatPanel.className = 'combat-panel';
-        combatPanel.innerHTML = `
-            <div class="combat-stats">
-                <div class="combat-player-stats">
-                    ❤️ ${Math.floor(this.player.hp)}/${this.player.maxHp}
-                </div>
-                <div class="combat-enemy-stats">
-                    ${this.currentEnemy.icon || '👾'} ${this.currentEnemy.name}: ${Math.floor(this.currentEnemy.hp)}/${this.currentEnemy.maxHp}
-                </div>
-            </div>
-            <div class="combat-actions">
-                <button id="combatAttackBtn">⚔️ АТАКОВАТЬ</button>
-            </div>
-            <div class="weapon-select" id="weaponSelect"></div>
-            <div class="combat-log" id="combatLog"></div>
-        `;
-        
-        document.querySelector('.game-container').appendChild(combatPanel);
-        
-        document.getElementById('combatAttackBtn').onclick = () => this.playerAttack();
-        this.updateWeaponButtons();
-        document.getElementById('combatLog').innerHTML = '';
-    }
-    
-    updateWeaponButtons() {
-        const weaponSelect = document.getElementById('weaponSelect');
-        if (!weaponSelect) return;
-        
-        weaponSelect.innerHTML = '';
-        for (const [id, weapon] of Object.entries(this.player.weapons)) {
-            const ammoText = weapon.ammo !== null ? `[${weapon.ammo}/${weapon.maxAmmo}]` : '';
-            const btn = document.createElement('button');
-            btn.className = `weapon-btn ${this.player.currentWeapon === id ? 'active' : ''}`;
-            btn.innerHTML = `${weapon.icon || '🔫'} ${weapon.name} ${ammoText}`;
-            btn.onclick = () => this.switchWeapon(id);
-            weaponSelect.appendChild(btn);
-        }
-    }
-    
-    addCombatLog(message, type = 'combat') {
-        const combatLog = document.getElementById('combatLog');
-        if (combatLog) {
-            const logEntry = document.createElement('div');
-            logEntry.textContent = message;
-            combatLog.appendChild(logEntry);
-            combatLog.scrollTop = combatLog.scrollHeight;
-        }
-        this.addLog(message, type);
     }
     
     endBattle(won) {
         this.inCombat = false;
-        
-        const combatPanel = document.querySelector('.combat-panel');
-        if (combatPanel) combatPanel.remove();
-        
-        document.getElementById('chatPanel').style.display = 'block';
         this.canvas.classList.remove('combat-overlay');
         
         if (won) {
@@ -425,9 +330,9 @@ class Game {
         const rand = Math.random() * this.player.lootChanceBonus;
         
         if (rand < 0.25) {
-            return { name: 'Аптечка', type: 'consumable' };
+            return { name: 'Аптечка', type: 'consumable', value: 25 };
         } else if (rand < 0.45) {
-            return { name: 'Металлолом', type: 'craft' };
+            return { name: 'Металлолом', type: 'craft', value: 15 };
         } else if (rand < 0.55 && this.player.currentWeapon !== 'knife') {
             const weapon = this.player.weapons[this.player.currentWeapon];
             if (weapon && weapon.ammo !== null) {
@@ -435,7 +340,7 @@ class Game {
                     (CONFIG.COMBAT.AMMO_DROP_AMOUNT.max - CONFIG.COMBAT.AMMO_DROP_AMOUNT.min + 1) + 
                     CONFIG.COMBAT.AMMO_DROP_AMOUNT.min) * this.player.ammoDropBonus;
                 weapon.ammo = Math.min(weapon.maxAmmo, weapon.ammo + amount);
-                return { name: `Патроны x${amount}`, type: 'ammo' };
+                return { name: `Патроны x${amount}`, type: 'ammo', value: amount };
             }
         }
         
@@ -491,10 +396,10 @@ class Game {
                 this.player.water = Math.min(100, this.player.water + 15);
                 this.addLog(`💧 Нашли бутылку воды! +15 воды`, 'event');
             } else if (type === 'medkit') {
-                this.player.inventory.push({ name: 'Аптечка', type: 'consumable' });
+                this.player.inventory.push({ name: 'Аптечка', type: 'consumable', value: 25 });
                 this.addLog(`📦 Нашли аптечку!`, 'event');
             } else if (type === 'scrap') {
-                this.player.inventory.push({ name: 'Металлолом', type: 'craft' });
+                this.player.inventory.push({ name: 'Металлолом', type: 'craft', value: 15 });
                 this.addLog(`📦 Нашли металлолом!`, 'event');
             }
             this.addExp(CONFIG.GAME.BASE_EXP_PER_EVENT);
@@ -533,22 +438,12 @@ class Game {
                         this.player.water = Math.min(100, this.player.water + 30);
                         this.addLog('Нашли припасы! +30 еды и воды', 'event');
                     } else {
-                        this.player.inventory.push({ name: 'Аптечка', type: 'consumable' });
+                        this.player.inventory.push({ name: 'Аптечка', type: 'consumable', value: 25 });
                         this.addLog('Нашли аптечку!', 'event');
                     }
                     this.addExp(15);
                 }, () => {
                     this.addLog('Решили не рисковать', 'system');
-                }]
-            },
-            {
-                text: '📻 Радиосигнал о помощи',
-                options: ['Ответить', 'Игнорировать'],
-                effects: [() => {
-                    this.addExp(30);
-                    this.addLog('Вы помогли выжившим! +30 опыта', 'system');
-                }, () => {
-                    this.addLog('Вы проигнорировали сигнал', 'system');
                 }]
             }
         ];
@@ -610,7 +505,7 @@ class Game {
         
         // Небо
         if (this.sprites.SKY) {
-            this.ctx.drawImage(this.sprites.SKY, 0, CONFIG.BACKGROUND_POSITIONS.SKY_Y, 600, 200);
+            this.ctx.drawImage(this.sprites.SKY, 0, CONFIG.BACKGROUND_POSITIONS.SKY_Y, CONFIG.SPRITE_SIZES.BG_WIDTH, 200);
         } else {
             const gradient = this.ctx.createLinearGradient(0, 0, 0, 200);
             gradient.addColorStop(0, '#1a1a2e');
@@ -622,24 +517,24 @@ class Game {
         // Руины
         if (this.sprites.RUINS) {
             for (let i = 0; i < 3; i++) {
-                this.ctx.drawImage(this.sprites.RUINS, this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.RUINS_Y, 600, 120);
+                this.ctx.drawImage(this.sprites.RUINS, this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.RUINS_Y, CONFIG.SPRITE_SIZES.BG_WIDTH, CONFIG.SPRITE_SIZES.BG_HEIGHT);
             }
         } else {
             this.ctx.fillStyle = '#3a3a2a';
             for (let i = 0; i < 3; i++) {
-                this.ctx.fillRect(this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.RUINS_Y, 600, 120);
+                this.ctx.fillRect(this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.RUINS_Y, CONFIG.SPRITE_SIZES.BG_WIDTH, CONFIG.SPRITE_SIZES.BG_HEIGHT);
             }
         }
         
         // Земля
         if (this.sprites.GROUND) {
             for (let i = 0; i < 3; i++) {
-                this.ctx.drawImage(this.sprites.GROUND, this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.GROUND_Y, 600, 120);
+                this.ctx.drawImage(this.sprites.GROUND, this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.GROUND_Y, CONFIG.SPRITE_SIZES.BG_WIDTH, CONFIG.SPRITE_SIZES.BG_HEIGHT);
             }
         } else {
             this.ctx.fillStyle = '#5a4a3a';
             for (let i = 0; i < 3; i++) {
-                this.ctx.fillRect(this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.GROUND_Y, 600, 120);
+                this.ctx.fillRect(this.backgroundX + i * 600, CONFIG.BACKGROUND_POSITIONS.GROUND_Y, CONFIG.SPRITE_SIZES.BG_WIDTH, CONFIG.SPRITE_SIZES.BG_HEIGHT);
             }
         }
         
@@ -649,7 +544,7 @@ class Game {
             const enemySprite = this.sprites[enemySpriteKey] || this.sprites.ENEMY_RAIDER;
             
             if (enemySprite) {
-                this.ctx.drawImage(enemySprite, this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y, 80, 80);
+                this.ctx.drawImage(enemySprite, this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y, CONFIG.SPRITE_SIZES.ENEMY_WIDTH, CONFIG.SPRITE_SIZES.ENEMY_HEIGHT);
             } else {
                 this.ctx.fillStyle = '#8b0000';
                 this.ctx.fillRect(this.enemyX, CONFIG.BACKGROUND_POSITIONS.ENEMY_Y, 60, 70);
@@ -675,7 +570,7 @@ class Game {
         
         const walkOffset = !this.inCombat ? Math.sin(this.walkingCycle) * 2 : 0;
         if (heroSprite) {
-            this.ctx.drawImage(heroSprite, CONFIG.BACKGROUND_POSITIONS.HERO_X, CONFIG.BACKGROUND_POSITIONS.HERO_Y + walkOffset, 80, 80);
+            this.ctx.drawImage(heroSprite, CONFIG.BACKGROUND_POSITIONS.HERO_X, CONFIG.BACKGROUND_POSITIONS.HERO_Y + walkOffset, CONFIG.SPRITE_SIZES.HERO_WIDTH, CONFIG.SPRITE_SIZES.HERO_HEIGHT);
         } else {
             this.ctx.fillStyle = '#8B5A2B';
             this.ctx.fillRect(CONFIG.BACKGROUND_POSITIONS.HERO_X, CONFIG.BACKGROUND_POSITIONS.HERO_Y + walkOffset, 40, 60);
@@ -689,11 +584,13 @@ class Game {
         if (this.sprites[weaponSpriteKey]) {
             this.ctx.drawImage(this.sprites[weaponSpriteKey], 
                 CONFIG.BACKGROUND_POSITIONS.WEAPON_X, 
-                CONFIG.BACKGROUND_POSITIONS.WEAPON_Y, 32, 32);
+                CONFIG.BACKGROUND_POSITIONS.WEAPON_Y, 
+                CONFIG.SPRITE_SIZES.WEAPON_WIDTH, 
+                CONFIG.SPRITE_SIZES.WEAPON_HEIGHT);
         }
         
         // Анимация выстрела
-        if (this.shootAnimation && weapon.range === 'ranged' && this.inCombat) {
+        if (this.shootAnimation && weapon.range === 'ranged' && this.inCombat && this.currentEnemy) {
             this.ctx.fillStyle = '#ffff00';
             this.ctx.beginPath();
             this.ctx.moveTo(CONFIG.BACKGROUND_POSITIONS.WEAPON_X + 32, CONFIG.BACKGROUND_POSITIONS.WEAPON_Y + 16);
@@ -715,6 +612,35 @@ class Game {
     
     showInventory() {
         const modal = document.getElementById('inventoryModal');
+        this.updateInventoryUI();
+        modal.style.display = 'flex';
+    }
+    
+    updateInventoryUI() {
+        // Обновляем отображение текущего оружия
+        const weaponSlot = document.getElementById('currentWeaponSlot');
+        const currentWeapon = this.player.weapons[this.player.currentWeapon];
+        weaponSlot.innerHTML = `
+            <div class="equipment-icon">${currentWeapon.icon || '🔫'}</div>
+            <div class="equipment-info">
+                <div>${currentWeapon.name}</div>
+                <div class="equipment-stats">⚔️ ${currentWeapon.damage} урона</div>
+                ${currentWeapon.ammo !== null ? `<div class="equipment-stats">🔫 ${currentWeapon.ammo}/${currentWeapon.maxAmmo}</div>` : ''}
+            </div>
+        `;
+        
+        // Обновляем отображение текущей брони
+        const armorSlot = document.getElementById('currentArmorSlot');
+        const currentArmor = this.player.armorItems[this.player.currentArmor];
+        armorSlot.innerHTML = `
+            <div class="equipment-icon">🛡️</div>
+            <div class="equipment-info">
+                <div>${currentArmor.name}</div>
+                <div class="equipment-stats">🛡️ ${currentArmor.defense} защиты</div>
+            </div>
+        `;
+        
+        // Обновляем список предметов
         const inventoryDiv = document.getElementById('inventoryList');
         inventoryDiv.innerHTML = '';
         
@@ -724,18 +650,71 @@ class Game {
             this.player.inventory.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'inventory-item';
-                itemDiv.innerHTML = `<div>${item.name}</div>`;
-                itemDiv.onclick = () => this.useItem(index);
+                itemDiv.innerHTML = `
+                    <div>${item.name}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn use-btn" data-index="${index}">Использовать</button>
+                        <button class="item-action-btn scrap-btn" data-index="${index}">Разобрать</button>
+                        <button class="item-action-btn drop-btn" data-index="${index}">Выбросить</button>
+                    </div>
+                `;
                 inventoryDiv.appendChild(itemDiv);
             });
+            
+            // Добавляем обработчики для кнопок
+            document.querySelectorAll('.use-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.useItem(parseInt(btn.dataset.index));
+                };
+            });
+            document.querySelectorAll('.scrap-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.scrapItem(parseInt(btn.dataset.index));
+                };
+            });
+            document.querySelectorAll('.drop-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.dropItem(parseInt(btn.dataset.index));
+                };
+            });
         }
-        
-        modal.style.display = 'flex';
     }
     
-    closeInventory() {
-        const modal = document.getElementById('inventoryModal');
-        if (modal) modal.style.display = 'none';
+    prevWeapon() {
+        this.player.weaponIndex = (this.player.weaponIndex - 1 + this.weaponList.length) % this.weaponList.length;
+        this.player.currentWeapon = this.weaponList[this.player.weaponIndex];
+        this.updateInventoryUI();
+        this.addLog(`Экипировано: ${this.player.weapons[this.player.currentWeapon].name}`, 'system');
+        this.saveGame();
+    }
+    
+    nextWeapon() {
+        this.player.weaponIndex = (this.player.weaponIndex + 1) % this.weaponList.length;
+        this.player.currentWeapon = this.weaponList[this.player.weaponIndex];
+        this.updateInventoryUI();
+        this.addLog(`Экипировано: ${this.player.weapons[this.player.currentWeapon].name}`, 'system');
+        this.saveGame();
+    }
+    
+    prevArmor() {
+        this.player.armorIndex = (this.player.armorIndex - 1 + this.armorList.length) % this.armorList.length;
+        this.player.currentArmor = this.armorList[this.player.armorIndex];
+        this.player.armor = this.player.armorItems[this.player.currentArmor].defense;
+        this.updateInventoryUI();
+        this.addLog(`Экипировано: ${this.player.armorItems[this.player.currentArmor].name}`, 'system');
+        this.saveGame();
+    }
+    
+    nextArmor() {
+        this.player.armorIndex = (this.player.armorIndex + 1) % this.armorList.length;
+        this.player.currentArmor = this.armorList[this.player.armorIndex];
+        this.player.armor = this.player.armorItems[this.player.currentArmor].defense;
+        this.updateInventoryUI();
+        this.addLog(`Экипировано: ${this.player.armorItems[this.player.currentArmor].name}`, 'system');
+        this.saveGame();
     }
     
     useItem(index) {
@@ -749,31 +728,54 @@ class Game {
         } else if (item.name.includes('Патроны')) {
             const weapon = this.player.weapons[this.player.currentWeapon];
             if (weapon && weapon.ammo !== null) {
-                const amount = parseInt(item.name.match(/\d+/)[0]);
+                const amount = item.value || 10;
                 weapon.ammo = Math.min(weapon.maxAmmo, weapon.ammo + amount);
                 this.addLog(`🔫 Добавлено ${amount} патронов`, 'system');
                 this.player.inventory.splice(index, 1);
             }
-        } else if (item.name === 'Металлолом') {
-            this.craftFromInventory();
-            return;
         }
         
         this.updateUI();
-        this.showInventory();
+        this.updateInventoryUI();
         this.saveGame();
     }
     
-    craftFromInventory() {
-        const metalCount = this.player.inventory.filter(i => i.name === 'Металлолом').length;
+    scrapItem(index) {
+        const item = this.player.inventory[index];
+        const scrapValue = Math.floor(item.value / 2) || 5;
+        this.player.inventory.push({ name: 'Металлолом', type: 'craft', value: scrapValue });
+        this.player.inventory.splice(index, 1);
+        this.addLog(`🔧 Разобрали ${item.name} на металлолом`, 'system');
+        this.updateInventoryUI();
+        this.saveGame();
+    }
+    
+    dropItem(index) {
+        this.player.inventory.splice(index, 1);
+        this.addLog(`🗑️ Предмет выброшен`, 'system');
+        this.updateInventoryUI();
+        this.saveGame();
+    }
+    
+    closeInventory() {
+        const modal = document.getElementById('inventoryModal');
+        if (modal) modal.style.display = 'none';
+    }
+    
+    craft() {
+        const metalCount = this.player.inventory.filter(i => i.name === 'Металлолом').reduce((sum, i) => sum + i.value, 0);
         
-        if (metalCount >= 2) {
-            let removed = 0;
-            for (let i = 0; i < this.player.inventory.length && removed < 2; i++) {
+        if (metalCount >= 30) {
+            let toRemove = 30;
+            for (let i = 0; i < this.player.inventory.length && toRemove > 0; i++) {
                 if (this.player.inventory[i].name === 'Металлолом') {
-                    this.player.inventory.splice(i, 1);
-                    removed++;
-                    i--;
+                    const removeAmount = Math.min(this.player.inventory[i].value, toRemove);
+                    this.player.inventory[i].value -= removeAmount;
+                    toRemove -= removeAmount;
+                    if (this.player.inventory[i].value <= 0) {
+                        this.player.inventory.splice(i, 1);
+                        i--;
+                    }
                 }
             }
             this.player.weapons.knife.damage += 5;
@@ -781,12 +783,8 @@ class Game {
             this.updateUI();
             this.saveGame();
         } else {
-            this.addLog('❌ Нужно 2 металлолома для улучшения ножа!', 'system');
+            this.addLog(`❌ Нужно 30 металлолома для улучшения ножа! (есть ${metalCount})`, 'system');
         }
-    }
-    
-    craft() {
-        this.craftFromInventory();
     }
     
     showPerks() {
@@ -805,10 +803,27 @@ class Game {
             
             const perkDiv = document.createElement('div');
             perkDiv.className = `perk-item ${!isUnlocked || isOwned ? 'perk-locked' : ''}`;
+            
+            // Создаем canvas для иконки перка
+            const iconCanvas = document.createElement('canvas');
+            iconCanvas.width = 32;
+            iconCanvas.height = 32;
+            iconCanvas.style.marginRight = '10px';
+            
+            if (this.sprites[perk.iconSprite]) {
+                const ctx = iconCanvas.getContext('2d');
+                ctx.drawImage(this.sprites[perk.iconSprite], 0, 0, 32, 32);
+            }
+            
             perkDiv.innerHTML = `
-                <div class="perk-name" style="color: ${perk.color}">${perk.icon} ${perk.name}</div>
-                <div class="perk-desc">${perk.description}</div>
-                <div class="perk-desc">⭐ Требуется уровень ${perk.requiredLevel}</div>
+                <div style="display: flex; align-items: center;">
+                    ${iconCanvas.outerHTML}
+                    <div style="flex: 1;">
+                        <div class="perk-name" style="color: ${perk.color}">${perk.icon} ${perk.name}</div>
+                        <div class="perk-desc">${perk.description}</div>
+                        <div class="perk-desc">⭐ Требуется уровень ${perk.requiredLevel}</div>
+                    </div>
+                </div>
             `;
             
             if (isUnlocked && !isOwned && this.player.perkPoints > 0) {
@@ -834,11 +849,14 @@ class Game {
                 <div style="margin-top: 10px; font-size: 11px; text-align: center; color: #d4a043;">
                     ${TEXTS.MODAL.PERK_POINTS}: ${this.player.perkPoints}
                 </div>
-                <button class="modal-close" onclick="document.getElementById('perksModal').style.display='none'">Закрыть</button>
+                <button id="closePerksBtn" class="modal-close">Закрыть</button>
             </div>
         `;
         
         document.body.appendChild(modal);
+        document.getElementById('closePerksBtn').onclick = () => {
+            modal.style.display = 'none';
+        };
         this.showPerks();
     }
     
@@ -910,7 +928,7 @@ class Game {
         const logEntry = document.createElement('div');
         logEntry.className = `chat-message ${type}`;
         
-        const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         logEntry.textContent = `[${time}] ${message}`;
         
         chatMessages.appendChild(logEntry);
@@ -934,9 +952,13 @@ class Game {
                 distance: this.player.distance,
                 inventory: this.player.inventory,
                 currentWeapon: this.player.currentWeapon,
+                currentArmor: this.player.currentArmor,
                 weapons: this.player.weapons,
+                armorItems: this.player.armorItems,
                 armor: this.player.armor,
                 perkPoints: this.player.perkPoints,
+                weaponIndex: this.player.weaponIndex,
+                armorIndex: this.player.armorIndex,
                 meleeDamageBonus: this.player.meleeDamageBonus,
                 rangedDamageBonus: this.player.rangedDamageBonus,
                 lootChanceBonus: this.player.lootChanceBonus,
@@ -959,6 +981,8 @@ class Game {
                 this.player = result.gameSave.player;
                 PERKS.active = result.gameSave.activePerks || [];
                 this.gameTime = result.gameSave.gameTime || 0;
+                this.weaponList = Object.keys(this.player.weapons);
+                this.armorList = Object.keys(this.player.armorItems);
                 
                 PERKS.clearPerkEffects(this.player);
                 for (const perkId of PERKS.active) {
@@ -975,11 +999,6 @@ class Game {
         clearInterval(this.gameLoop);
         clearInterval(this.eventTimer);
         clearInterval(this.distanceReportTimer);
-        
-        if (this.inCombat) {
-            const combatPanel = document.querySelector('.combat-panel');
-            if (combatPanel) combatPanel.remove();
-        }
         
         this.addLog(TEXTS.CHAT.GAME_OVER, 'system');
         this.addLog(`🏆 Пройдено: ${Math.floor(this.player.distance)} метров, Уровень: ${this.player.level}`, 'system');
@@ -998,6 +1017,11 @@ class Game {
         document.getElementById('restBtn').onclick = () => this.rest();
         document.getElementById('perksBtn').onclick = () => this.showPerks();
         document.getElementById('chatToggleBtn').onclick = () => this.toggleChat();
+        document.getElementById('closeInventoryBtn').onclick = () => this.closeInventory();
+        document.getElementById('prevWeaponBtn').onclick = () => this.prevWeapon();
+        document.getElementById('nextWeaponBtn').onclick = () => this.nextWeapon();
+        document.getElementById('prevArmorBtn').onclick = () => this.prevArmor();
+        document.getElementById('nextArmorBtn').onclick = () => this.nextArmor();
     }
 }
 
@@ -1005,7 +1029,3 @@ class Game {
 document.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
-
-window.closeInventory = () => {
-    if (window.game) window.game.closeInventory();
-};

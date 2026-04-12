@@ -6,11 +6,25 @@ const CONFIG = {
         HEIGHT: 500
     },
     
+    // Размеры спрайтов (можно регулировать вручную)
+    SPRITE_SIZES: {
+        HERO_WIDTH: 80,
+        HERO_HEIGHT: 80,
+        ENEMY_WIDTH: 80,
+        ENEMY_HEIGHT: 80,
+        WEAPON_WIDTH: 32,
+        WEAPON_HEIGHT: 32,
+        ICON_WIDTH: 32,
+        ICON_HEIGHT: 32,
+        BG_WIDTH: 600,
+        BG_HEIGHT: 150
+    },
+    
     BACKGROUND_POSITIONS: {
         GROUND_Y: 280,
         RUINS_Y: 160,
         SKY_Y: 0,
-        HERO_X: 80,           // Герой слева
+        HERO_X: 80,
         HERO_Y: 210,
         ENEMY_X: 460,
         ENEMY_Y: 210,
@@ -23,8 +37,8 @@ const CONFIG = {
         EVENT_INTERVAL: 15000,
         BACKGROUND_SPEED: 1.5,
         WALK_ANIMATION_SPEED: 0.15,
-        DISTANCE_SPEED: 0.5,    // метры за тик
-        DISTANCE_REPORT_INTERVAL: 300000, // 5 минут в мс
+        DISTANCE_SPEED: 0.5,
+        DISTANCE_REPORT_INTERVAL: 300000,
         BASE_EXP_PER_KILL: 50,
         BASE_EXP_PER_EVENT: 20
     },
@@ -39,11 +53,17 @@ const CONFIG = {
         START_EXP: 0,
         START_DISTANCE: 0,
         START_WEAPON: 'knife',
+        START_ARMOR_ITEM: 'leather',
         WEAPONS: {
-            knife: { name: 'Ржавый нож', damage: 8, range: 'melee', ammo: null, maxAmmo: null, sprite: 'knife.png', icon: '🔪' },
-            pistol: { name: 'Пистолет', damage: 15, range: 'ranged', ammo: 30, maxAmmo: 30, sprite: 'pistol.png', icon: '🔫' },
-            rifle: { name: 'Винтовка', damage: 25, range: 'ranged', ammo: 20, maxAmmo: 20, sprite: 'rifle.png', icon: '🔫' },
-            shotgun: { name: 'Дробовик', damage: 35, range: 'ranged', ammo: 12, maxAmmo: 12, sprite: 'shotgun.png', icon: '🔫' }
+            knife: { name: 'Ржавый нож', damage: 8, range: 'melee', ammo: null, maxAmmo: null, sprite: 'knife.png', icon: '🔪', value: 20 },
+            pistol: { name: 'Пистолет', damage: 15, range: 'ranged', ammo: 30, maxAmmo: 30, sprite: 'pistol.png', icon: '🔫', value: 50 },
+            rifle: { name: 'Винтовка', damage: 25, range: 'ranged', ammo: 20, maxAmmo: 20, sprite: 'rifle.png', icon: '🔫', value: 80 },
+            shotgun: { name: 'Дробовик', damage: 35, range: 'ranged', ammo: 12, maxAmmo: 12, sprite: 'shotgun.png', icon: '🔫', value: 100 }
+        },
+        ARMOR: {
+            leather: { name: 'Кожаная куртка', defense: 2, value: 30 },
+            metal: { name: 'Металлический доспех', defense: 5, value: 80 },
+            combat: { name: 'Бронежилет', defense: 8, value: 150 }
         }
     },
     
@@ -93,6 +113,11 @@ const CONFIG = {
             RIFLE: 'sprites/weapons/rifle.png',
             SHOTGUN: 'sprites/weapons/shotgun.png'
         },
+        ARMOR: {
+            LEATHER: 'sprites/armor/leather.png',
+            METAL: 'sprites/armor/metal.png',
+            COMBAT: 'sprites/armor/combat.png'
+        },
         BACKGROUND: {
             GROUND: 'sprites/background/ground.png',
             RUINS: 'sprites/background/ruins.png',
@@ -108,7 +133,18 @@ const CONFIG = {
             HEALTH: 'sprites/icons/health.png',
             FOOD: 'sprites/icons/food.png',
             WATER: 'sprites/icons/water.png',
-            EXP: 'sprites/icons/exp.png'
+            EXP: 'sprites/icons/exp.png',
+            DISTANCE: 'sprites/icons/distance.png',
+            PERK_TOUGH: 'sprites/icons/perk-tough.png',
+            PERK_STRONG: 'sprites/icons/perk-strong.png',
+            PERK_SNIPER: 'sprites/icons/perk-sniper.png',
+            PERK_LUCKY: 'sprites/icons/perk-lucky.png',
+            PERK_MARATHON: 'sprites/icons/perk-marathon.png',
+            PERK_BERSERK: 'sprites/icons/perk-berserk.png',
+            PERK_SCAVENGER: 'sprites/icons/perk-scavenger.png',
+            PERK_MEDIC: 'sprites/icons/perk-medic.png',
+            PERK_GUNSLINGER: 'sprites/icons/perk-gunslinger.png',
+            PERK_SURVIVOR: 'sprites/icons/perk-survivor.png'
         }
     }
 };

@@ -8,6 +8,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.tough,
             effect: { type: 'max_hp', value: 1.3 },
             icon: '💪',
+            iconSprite: 'PERK_TOUGH',
             requiredLevel: 2,
             color: '#ff6b6b'
         },
@@ -17,6 +18,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.strong,
             effect: { type: 'melee_damage', value: 1.4 },
             icon: '🔨',
+            iconSprite: 'PERK_STRONG',
             requiredLevel: 3,
             color: '#ffa500'
         },
@@ -26,6 +28,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.sniper,
             effect: { type: 'ranged_damage', value: 1.5 },
             icon: '🎯',
+            iconSprite: 'PERK_SNIPER',
             requiredLevel: 3,
             color: '#4ecdc4'
         },
@@ -35,6 +38,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.lucky,
             effect: { type: 'loot_chance', value: 1.25 },
             icon: '🍀',
+            iconSprite: 'PERK_LUCKY',
             requiredLevel: 4,
             color: '#45b7d1'
         },
@@ -44,6 +48,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.marathon,
             effect: { type: 'resource_drain', value: 0.7 },
             icon: '🏃',
+            iconSprite: 'PERK_MARATHON',
             requiredLevel: 5,
             color: '#96ceb4'
         },
@@ -53,6 +58,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.berserk,
             effect: { type: 'low_hp_damage', value: 1.2 },
             icon: '😈',
+            iconSprite: 'PERK_BERSERK',
             requiredLevel: 6,
             color: '#ff6b6b'
         },
@@ -62,6 +68,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.scavenger,
             effect: { type: 'ammo_drop', value: 1.5 },
             icon: '🔫',
+            iconSprite: 'PERK_SCAVENGER',
             requiredLevel: 4,
             color: '#ffd93d'
         },
@@ -71,6 +78,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.medic,
             effect: { type: 'heal_boost', value: 1.5 },
             icon: '💊',
+            iconSprite: 'PERK_MEDIC',
             requiredLevel: 3,
             color: '#6c5ce7'
         },
@@ -80,6 +88,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.gunslinger,
             effect: { type: 'attack_speed', value: 0.75 },
             icon: '⚡',
+            iconSprite: 'PERK_GUNSLINGER',
             requiredLevel: 5,
             color: '#fd79a8'
         },
@@ -89,6 +98,7 @@ const PERKS = {
             description: TEXTS.PERKS_DESC.survivor,
             effect: { type: 'armor', value: 15 },
             icon: '🛡️',
+            iconSprite: 'PERK_SURVIVOR',
             requiredLevel: 4,
             color: '#a29bfe'
         }
