@@ -5,7 +5,7 @@ const PERKS = {
         tough: {
             id: 'tough',
             name: 'Крепкий орешек',
-            description: TEXTS.PERKS_DESC.tough,
+            description: '💪 +30% к максимальному здоровью',
             effect: { type: 'max_hp', value: 1.3 },
             icon: '💪',
             iconSprite: 'PERK_TOUGH',
@@ -15,7 +15,7 @@ const PERKS = {
         strong: {
             id: 'strong',
             name: 'Силач',
-            description: TEXTS.PERKS_DESC.strong,
+            description: '🔨 +40% к урону в ближнем бою',
             effect: { type: 'melee_damage', value: 1.4 },
             icon: '🔨',
             iconSprite: 'PERK_STRONG',
@@ -25,7 +25,7 @@ const PERKS = {
         sniper: {
             id: 'sniper',
             name: 'Снайпер',
-            description: TEXTS.PERKS_DESC.sniper,
+            description: '🎯 +50% к урону из дальнобойного оружия',
             effect: { type: 'ranged_damage', value: 1.5 },
             icon: '🎯',
             iconSprite: 'PERK_SNIPER',
@@ -35,7 +35,7 @@ const PERKS = {
         lucky: {
             id: 'lucky',
             name: 'Везунчик',
-            description: TEXTS.PERKS_DESC.lucky,
+            description: '🍀 +25% шанс найти редкие предметы',
             effect: { type: 'loot_chance', value: 1.25 },
             icon: '🍀',
             iconSprite: 'PERK_LUCKY',
@@ -45,7 +45,7 @@ const PERKS = {
         marathon: {
             id: 'marathon',
             name: 'Марафонец',
-            description: TEXTS.PERKS_DESC.marathon,
+            description: '🏃 Снижение расхода ресурсов на 30%',
             effect: { type: 'resource_drain', value: 0.7 },
             icon: '🏃',
             iconSprite: 'PERK_MARATHON',
@@ -55,7 +55,7 @@ const PERKS = {
         berserk: {
             id: 'berserk',
             name: 'Берсерк',
-            description: TEXTS.PERKS_DESC.berserk,
+            description: '😈 +20% урона при низком здоровье',
             effect: { type: 'low_hp_damage', value: 1.2 },
             icon: '😈',
             iconSprite: 'PERK_BERSERK',
@@ -65,7 +65,7 @@ const PERKS = {
         scavenger: {
             id: 'scavenger',
             name: 'Мусорщик',
-            description: TEXTS.PERKS_DESC.scavenger,
+            description: '🔫 +50% патронов из лута',
             effect: { type: 'ammo_drop', value: 1.5 },
             icon: '🔫',
             iconSprite: 'PERK_SCAVENGER',
@@ -75,7 +75,7 @@ const PERKS = {
         medic: {
             id: 'medic',
             name: 'Медик',
-            description: TEXTS.PERKS_DESC.medic,
+            description: '💊 Аптечки восстанавливают на 50% больше',
             effect: { type: 'heal_boost', value: 1.5 },
             icon: '💊',
             iconSprite: 'PERK_MEDIC',
@@ -85,7 +85,7 @@ const PERKS = {
         gunslinger: {
             id: 'gunslinger',
             name: 'Стрелок',
-            description: TEXTS.PERKS_DESC.gunslinger,
+            description: '⚡ Скорострельность +25%',
             effect: { type: 'attack_speed', value: 0.75 },
             icon: '⚡',
             iconSprite: 'PERK_GUNSLINGER',
@@ -95,7 +95,7 @@ const PERKS = {
         survivor: {
             id: 'survivor',
             name: 'Выживальщик',
-            description: TEXTS.PERKS_DESC.survivor,
+            description: '🛡️ +15 к броне',
             effect: { type: 'armor', value: 15 },
             icon: '🛡️',
             iconSprite: 'PERK_SURVIVOR',

@@ -6,7 +6,6 @@ const CONFIG = {
         HEIGHT: 500
     },
     
-    // Размеры спрайтов (можно регулировать вручную)
     SPRITE_SIZES: {
         HERO_WIDTH: 80,
         HERO_HEIGHT: 80,
@@ -17,13 +16,14 @@ const CONFIG = {
         ICON_WIDTH: 32,
         ICON_HEIGHT: 32,
         BG_WIDTH: 600,
-        BG_HEIGHT: 150
+        BG_HEIGHT: 100,
+        PROJECTILE_SIZE: 8
     },
     
     BACKGROUND_POSITIONS: {
-        GROUND_Y: 280,
-        RUINS_Y: 160,
-        SKY_Y: 0,
+        GROUND_Y: 220,
+        RUINS_Y: 200,
+        SKY_Y: 100,
         HERO_X: 80,
         HERO_Y: 210,
         ENEMY_X: 460,
@@ -34,9 +34,9 @@ const CONFIG = {
     
     GAME: {
         TICK_INTERVAL: 100,
-        EVENT_INTERVAL: 15000,
+        EVENT_INTERVAL: 20000,
         BACKGROUND_SPEED: 1.5,
-        WALK_ANIMATION_SPEED: 0.15,
+        WALK_ANIMATION_SPEED: 0.55,
         DISTANCE_SPEED: 0.5,
         DISTANCE_REPORT_INTERVAL: 300000,
         BASE_EXP_PER_KILL: 50,
@@ -55,15 +55,15 @@ const CONFIG = {
         START_WEAPON: 'knife',
         START_ARMOR_ITEM: 'leather',
         WEAPONS: {
-            knife: { name: 'Ржавый нож', damage: 8, range: 'melee', ammo: null, maxAmmo: null, sprite: 'knife.png', icon: '🔪', value: 20 },
-            pistol: { name: 'Пистолет', damage: 15, range: 'ranged', ammo: 30, maxAmmo: 30, sprite: 'pistol.png', icon: '🔫', value: 50 },
-            rifle: { name: 'Винтовка', damage: 25, range: 'ranged', ammo: 20, maxAmmo: 20, sprite: 'rifle.png', icon: '🔫', value: 80 },
-            shotgun: { name: 'Дробовик', damage: 35, range: 'ranged', ammo: 12, maxAmmo: 12, sprite: 'shotgun.png', icon: '🔫', value: 100 }
+            knife: { name: 'Ржавый нож', damage: 8, range: 'melee', ammo: null, maxAmmo: null, sprite: 'knife.png', icon: '🔪', value: 20, speed: 0.8 },
+            pistol: { name: 'Пистолет', damage: 15, range: 'ranged', ammo: 30, maxAmmo: 30, sprite: 'pistol.png', icon: '🔫', value: 50, speed: 1.0, accuracy: 0.7 },
+            rifle: { name: 'Винтовка', damage: 25, range: 'ranged', ammo: 20, maxAmmo: 20, sprite: 'rifle.png', icon: '🔫', value: 80, speed: 1.2, accuracy: 0.85 },
+            shotgun: { name: 'Дробовик', damage: 35, range: 'ranged', ammo: 12, maxAmmo: 12, sprite: 'shotgun.png', icon: '🔫', value: 100, speed: 1.5, accuracy: 0.6 }
         },
         ARMOR: {
-            leather: { name: 'Кожаная куртка', defense: 2, value: 30 },
-            metal: { name: 'Металлический доспех', defense: 5, value: 80 },
-            combat: { name: 'Бронежилет', defense: 8, value: 150 }
+            leather: { name: 'Кожаная куртка', defense: 2, value: 30, sprite: 'leather.png' },
+            metal: { name: 'Металлический доспех', defense: 5, value: 80, sprite: 'metal.png' },
+            combat: { name: 'Бронежилет', defense: 8, value: 150, sprite: 'combat.png' }
         }
     },
     
@@ -75,11 +75,10 @@ const CONFIG = {
     },
     
     COMBAT: {
-        ATTACK_COOLDOWN: 800,
-        ENEMY_ATTACK_COOLDOWN: 1000,
-        MELEE_RANGE: 50,
-        AMMO_DROP_CHANCE: 0.3,
-        AMMO_DROP_AMOUNT: { min: 5, max: 15 }
+        MELEE_ATTACK_DELAY: 1500,
+        PROJECTILE_SPEED: 5,
+        BASE_HIT_CHANCE: 0.8,
+        CROSSHAIR_WOBBLE: 0.1
     },
     
     LEVELS: {
@@ -105,7 +104,8 @@ const CONFIG = {
             ENEMY_RAIDER: 'sprites/characters/enemy-raider.png',
             ENEMY_MUTANT: 'sprites/characters/enemy-mutant.png',
             ENEMY_DOG: 'sprites/characters/enemy-dog.png',
-            ENEMY_BANDIT: 'sprites/characters/enemy-bandit.png'
+            ENEMY_BANDIT: 'sprites/characters/enemy-bandit.png',
+            ENEMY_SCORPION: 'sprites/characters/enemy-scorpion.png'
         },
         WEAPONS: {
             KNIFE: 'sprites/weapons/knife.png',
@@ -134,7 +134,6 @@ const CONFIG = {
             FOOD: 'sprites/icons/food.png',
             WATER: 'sprites/icons/water.png',
             EXP: 'sprites/icons/exp.png',
-            DISTANCE: 'sprites/icons/distance.png',
             PERK_TOUGH: 'sprites/icons/perk-tough.png',
             PERK_STRONG: 'sprites/icons/perk-strong.png',
             PERK_SNIPER: 'sprites/icons/perk-sniper.png',
