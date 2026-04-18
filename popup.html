@@ -39,12 +39,22 @@
                 <canvas class="status-icon" data-icon="water" width="16" height="16"></canvas>
                 <span id="waterValue">100</span>
             </div>
-            <div class="status-item">
-                <canvas class="status-icon" data-icon="exp" width="16" height="16"></canvas>
-                <span id="expValue">0</span>
-            </div>
-            <div class="status-item">
-                🎯 <span id="levelValue">1</span>
+            <div class="status-item exp-container" title="Опыт">
+                <div class="exp-circle-wrapper">
+                    <svg class="exp-circle" width="36" height="36" viewBox="0 0 72 72">
+                        <!-- Фоновый круг -->
+                        <circle class="exp-circle-bg" cx="36" cy="36" r="30" fill="none" stroke="#2a1a0a" stroke-width="5"/>
+                        <!-- Прогресс (будет заполняться через JS) -->
+                        <circle id="expCircleProgress" class="exp-circle-progress" cx="36" cy="36" r="30" fill="none" 
+                                stroke="#ffd700" stroke-width="5" stroke-linecap="round"
+                                stroke-dasharray="188.495" stroke-dashoffset="188.495" 
+                                transform="rotate(-90 36 36)"/>
+                        <!-- Текст уровня -->
+                        <text x="36" y="42" text-anchor="middle" fill="#ffd700" font-size="18" font-weight="bold" font-family="monospace">
+                            <tspan id="levelValue">1</tspan>
+                        </text>
+                    </svg>
+                </div>
             </div>
         </div>
         
@@ -90,7 +100,14 @@
     
     <script src="config.js"></script>
     <script src="texts.js"></script>
-    <script src="perks.js"></script>
+    <script src="modules/Perks.js"></script>
+    <script src="modules/Player.js"></script>
+    <script src="modules/Combat.js"></script>
+    <script src="modules/UI.js"></script>
+    <script src="modules/Events.js"></script>
+    <script src="modules/Renderer.js"></script>
+    <script src="modules/Inventory.js"></script>
+    <script src="modules/RestManager.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

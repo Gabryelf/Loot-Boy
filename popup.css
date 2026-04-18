@@ -878,3 +878,491 @@ body {
         transform: translateY(-50px) scale(1.5);
     }
 }
+
+/* Круговой индикатор опыта */
+.exp-container {
+    cursor: help;
+    position: relative;
+}
+
+.exp-circle-wrapper {
+    width: 32px;
+    height: 32px;
+    position: relative;
+}
+
+.exp-circle {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.exp-circle-bg {
+    stroke: #2a1a0a;
+}
+
+.exp-circle-progress {
+    stroke: #ffd700;
+    transition: stroke-dashoffset 0.3s ease;
+    filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.5));
+}
+
+/* Улучшенный инвентарь */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 15px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+}
+
+.inventory-item {
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
+    border: 1px solid #6b5a48;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+    border-radius: 8px;
+}
+
+.inventory-item:hover {
+    transform: translateX(5px);
+    border-color: #d4a043;
+    background: linear-gradient(135deg, #3a2a1a 0%, #2a1a0a 100%);
+}
+
+.item-name {
+    font-weight: bold;
+    color: #d4a043;
+    font-size: 12px;
+}
+
+.item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.item-action-btn {
+    padding: 4px 10px;
+    background: #1a0f05;
+    border: 1px solid #6b5a48;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #d4a043;
+    font-size: 10px;
+    transition: all 0.2s;
+}
+
+.item-action-btn:hover {
+    transform: scale(1.05);
+}
+
+.empty-inventory {
+    text-align: center;
+    padding: 40px;
+    color: #6b5a48;
+    font-size: 14px;
+}
+
+/* Улучшенные перки */
+.perks-modal-content {
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.perks-points-display {
+    text-align: center;
+    padding: 10px;
+    margin: 10px 0;
+    background: linear-gradient(135deg, #ffd70020, #ffa50020);
+    border-radius: 8px;
+    font-weight: bold;
+    color: #ffd700;
+    font-size: 14px;
+}
+
+.perks-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 15px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+}
+
+.perk-card {
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
+    border: 1px solid #6b5a48;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.perk-card:not(.locked):hover {
+    transform: translateX(5px);
+    border-color: #d4a043;
+    background: linear-gradient(135deg, #3a2a1a 0%, #2a1a0a 100%);
+}
+
+.perk-card.locked {
+    opacity: 0.5;
+}
+
+.perk-icon {
+    font-size: 32px;
+    min-width: 48px;
+    text-align: center;
+}
+
+.perk-info {
+    flex: 1;
+}
+
+.perk-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.perk-description {
+    font-size: 11px;
+    color: #b8956a;
+    margin-bottom: 4px;
+}
+
+.perk-requirement {
+    font-size: 10px;
+    color: #8b7355;
+}
+
+.perk-action {
+    min-width: 100px;
+    text-align: center;
+}
+
+.perk-learn-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #d4a043, #b8860b);
+    border: none;
+    border-radius: 6px;
+    color: #1a0f05;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.perk-learn-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(212, 160, 67, 0.5);
+}
+
+.perk-owned {
+    color: #4ecdc4;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.perk-locked-text {
+    color: #ff6b6b;
+    font-size: 12px;
+}
+
+/* События с фоном */
+.event-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffd700;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.event-description {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.event-option-btn {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, #2a1a0a 0%, #1a0f05 100%);
+    color: #d4a043;
+    border: 1px solid #d4a043;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.event-option-btn:hover {
+    background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+    transform: translateX(8px);
+}
+
+/* Индикатор промаха */
+.miss-indicator {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+    animation: fadeOutUp 0.5s forwards;
+    z-index: 50;
+    font-family: monospace;
+}
+
+/* Исправление перевернутой цифры уровня */
+.exp-circle text tspan {
+    transform: rotate(90deg);
+    display: inline-block;
+}
+
+/* Альтернативное решение - исправляем SVG */
+.exp-circle {
+    transform: rotate(0deg) !important;
+}
+
+.exp-circle-progress {
+    transform: rotate(-90deg);
+}
+
+/* Анимация гуляния прицела */
+.crosshair-wobble {
+    animation: crosshairWobble 0.15s infinite ease-in-out;
+}
+
+@keyframes crosshairWobble {
+    0%, 100% { transform: translate(-50%, -50%) translate(0, 0); }
+    25% { transform: translate(-50%, -50%) translate(2px, -1px); }
+    75% { transform: translate(-50%, -50%) translate(-2px, 1px); }
+}
+
+
+/* Кнопка закрытия в модальном окне перков */
+#closePerksModalBtn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #d4a043, #b8860b);
+    color: #1a0f05;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+#closePerksModalBtn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(212, 160, 67, 0.5);
+}
+
+/* Прицел в бою */
+.custom-crosshair {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+}
+
+.crosshair-wobble {
+    animation: crosshairWobble 0.15s infinite ease-in-out;
+}
+
+@keyframes crosshairWobble {
+    0%, 100% { transform: translate(-50%, -50%) translate(0, 0); }
+    25% { transform: translate(-50%, -50%) translate(3px, -2px); }
+    75% { transform: translate(-50%, -50%) translate(-3px, 2px); }
+}
+
+.crosshair-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    background: #ff0000;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px #ff0000;
+}
+
+.crosshair-line {
+    position: absolute;
+    background: rgba(255, 0, 0, 0.9);
+    box-shadow: 0 0 3px #ff0000;
+}
+
+.crosshair-line.top {
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.crosshair-line.bottom {
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.crosshair-line.left {
+    top: 50%;
+    left: 0;
+    width: 10px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.crosshair-line.right {
+    top: 50%;
+    right: 0;
+    width: 10px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+/* Кнопка закрытия перков - всегда видна */
+.perks-close-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #d4a043, #b8860b);
+    color: #1a0f05;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    font-family: monospace;
+}
+
+.perks-close-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(212, 160, 67, 0.5);
+}
+
+/* Убедимся что модальное окно перков имеет правильную высоту */
+.perks-modal-content {
+    min-width: 400px;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.perks-grid {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+/* Прицел в бою - гарантированно видим */
+.custom-crosshair {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+}
+
+.crosshair-wobble {
+    animation: crosshairWobbleAnim 0.15s infinite ease-in-out;
+}
+
+@keyframes crosshairWobbleAnim {
+    0%, 100% { transform: translate(-50%, -50%) translate(0, 0); }
+    25% { transform: translate(-50%, -50%) translate(3px, -2px); }
+    75% { transform: translate(-50%, -50%) translate(-3px, 2px); }
+}
+
+.crosshair-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    background: #ff0000;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px #ff0000;
+}
+
+.crosshair-line {
+    position: absolute;
+    background: rgba(255, 0, 0, 0.9);
+    box-shadow: 0 0 3px #ff0000;
+}
+
+.crosshair-line.top {
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.crosshair-line.bottom {
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.crosshair-line.left {
+    top: 50%;
+    left: 0;
+    width: 10px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.crosshair-line.right {
+    top: 50%;
+    right: 0;
+    width: 10px;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+/* Прицел - всегда поверх всего и в правильной позиции */
+.custom-crosshair {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    z-index: 999999;
+    transform: translate(-50%, -50%);
+    will-change: left, top;
+}
+
+/* Убедимся что канвас имеет правильные координаты */
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: none;
+}

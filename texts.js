@@ -54,6 +54,7 @@ const TEXTS = {
             id: 'abandoned_hospital',
             title: '🏥 Заброшенная больница',
             description: 'Вы нашли старую больницу. Внутри слышны подозрительные звуки, но видны медицинские шкафы.',
+            backgroundImage: 'sprites/events/hospital-bg.jpg',
             options: [
                 { text: 'Обыскать аптеку', effects: ['medkit_high', 'exp'] },
                 { text: 'Поискать в морге', effects: ['medkit', 'danger_low'] },
@@ -64,6 +65,7 @@ const TEXTS = {
             id: 'radio_signal',
             title: '📻 Таинственный радиосигнал',
             description: 'Ваше радио поймало странный сигнал. Кто-то просит о помощи.',
+            backgroundImage: 'sprites/events/radio-bg.jpg',
             options: [
                 { text: 'Ответить и пойти на сигнал', effects: ['exp_high', 'food'] },
                 { text: 'Игнорировать', effects: ['none'] },
@@ -74,6 +76,7 @@ const TEXTS = {
             id: 'mutant_nest',
             title: '🕷️ Гнездо мутантов',
             description: 'Вы наткнулись на гнездо мутантов. Они ещё не заметили вас.',
+            backgroundImage: 'sprites/events/mutant-bg.jpg',
             options: [
                 { text: 'Атаковать внезапно', effects: ['combat_easy', 'exp_high'] },
                 { text: 'Обойти стороной', effects: ['stealth'] },
@@ -84,6 +87,7 @@ const TEXTS = {
             id: 'merchant_caravan',
             title: '🚚 Караван торговцев',
             description: 'Вы встретили торговый караван. У них есть редкие товары.',
+            backgroundImage: 'sprites/events/caravan-bg.jpg',
             options: [
                 { text: 'Обменять металлолом', effects: ['trade_ammo'] },
                 { text: 'Попытаться украсть', effects: ['danger_high'] },
@@ -94,6 +98,7 @@ const TEXTS = {
             id: 'ancient_ruins',
             title: '🏛️ Древние руины',
             description: 'Перед вами руины древней цивилизации.',
+            backgroundImage: 'sprites/events/ruins-bg.jpg',
             options: [
                 { text: 'Исследовать подземелье', effects: ['artifact', 'exp_high', 'danger_high'] },
                 { text: 'Осмотреть поверхность', effects: ['scrap', 'exp'] },
@@ -104,6 +109,7 @@ const TEXTS = {
             id: 'radioactive_storm',
             title: '☢️ Радиоактивная буря',
             description: 'Небо окрасилось в зелёный цвет. Надвигается буря!',
+            backgroundImage: 'sprites/events/storm-bg.jpg',
             options: [
                 { text: 'Спрятаться в подвале', effects: ['safe', 'food_loss'] },
                 { text: 'Использовать препараты', effects: ['medkit_loss', 'radiation_resist'] },
@@ -114,6 +120,7 @@ const TEXTS = {
             id: 'survivor_camp',
             title: '🏕️ Лагерь выживших',
             description: 'Вы нашли небольшой лагерь выживших.',
+            backgroundImage: 'sprites/events/camp-bg.jpg',
             options: [
                 { text: 'Предложить обмен', effects: ['trade_all', 'exp'] },
                 { text: 'Помочь с ремонтом', effects: ['exp_high', 'repair'] },
@@ -124,6 +131,7 @@ const TEXTS = {
             id: 'military_cache',
             title: '📦 Военный склад',
             description: 'Секретный склад с военным снаряжением.',
+            backgroundImage: 'sprites/events/cache-bg.jpg',
             options: [
                 { text: 'Взломать замок', effects: ['weapon_rare', 'danger_medium'] },
                 { text: 'Найти запасной вход', effects: ['armor', 'exp'] },
@@ -134,6 +142,7 @@ const TEXTS = {
             id: 'water_purifier',
             title: '💧 Водоочистительная станция',
             description: 'Работающая водоочистительная станция!',
+            backgroundImage: 'sprites/events/purifier-bg.jpg',
             options: [
                 { text: 'Набрать воды', effects: ['water_high'] },
                 { text: 'Починить станцию', effects: ['exp_high', 'repair'] },
@@ -144,6 +153,7 @@ const TEXTS = {
             id: 'bandit_ambush',
             title: '🔫 Засада бандитов',
             description: 'Вы попали в засаду! Бандиты требуют отдать все припасы.',
+            backgroundImage: 'sprites/events/bandit-bg.jpg',
             options: [
                 { text: 'Сражаться', effects: ['combat_normal', 'loot_normal'] },
                 { text: 'Отдать припасы', effects: ['food_loss', 'water_loss'] },
